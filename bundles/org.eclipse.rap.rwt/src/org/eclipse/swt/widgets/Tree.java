@@ -2225,23 +2225,37 @@ public class Tree extends Composite {
     return result;
   }
 
+  // tree out of sync: handling count and virtual in refresh
   void updateAllItems() {
+    List<TreeItem> pendings = new ArrayList<>();
+
     int flatIndex = 0;
     for( int index = 0; index < itemCount; index++ ) {
-      flatIndex = updateAllItemsRecursively( null, index, flatIndex );
+      flatIndex = updateAllItemsRecursively( null, index, flatIndex, pendings );
     }
+
     isFlatIndexValid = true;
     visibleItemsCount = flatIndex;
+    
+    for( TreeItem ti: pendings )  {
+      if( !isDisposed() && !ti.isDisposed() ) {
+        checkData( ti, ti.getParentItem() != null ? ti.getParentItem().indexOf(ti) : indexOf(ti) );
+      }
+    }
+    
   }
 
-  private int updateAllItemsRecursively( TreeItem parent, int index, int flatIndex ) {
+  // tree out of sync: handling count and virtual in refresh
+  private int updateAllItemsRecursively( TreeItem parent, int index, int flatIndex, List<TreeItem> pendings ) {
     int newFlatIndex = flatIndex;
     TreeItem item = parent == null ? items[ index ] : parent.items[ index ];
     if( shouldResolveItem( flatIndex ) ) {
       if( item == null ) {
         item = parent == null ? _getItem( index ) : parent._getItem( index );
       }
-      checkData( item, index );
+      if( isVirtual() && !item.isCached() ) {
+        pendings.add( item );        
+      }
     }
     if( item != null ) {
       item.setFlatIndex( newFlatIndex );
@@ -2249,7 +2263,7 @@ public class Tree extends Composite {
     newFlatIndex++;
     if( item != null && item.getExpanded() ) {
       for( int i = 0; i < item.itemCount; i++ ) {
-        newFlatIndex = updateAllItemsRecursively( item, i, newFlatIndex );
+        newFlatIndex = updateAllItemsRecursively( item, i, newFlatIndex, pendings );
       }
     }
     return newFlatIndex;

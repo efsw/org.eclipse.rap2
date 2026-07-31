@@ -62,12 +62,16 @@ rwt.client.ServerPush.prototype = {
   _handleError : function( event ) {
     this._running = false;
     if( rwt.remote.Connection.getInstance()._isConnectionError( event.status ) ) {
-      if( this._retryCount < 3 ) {
-        var delay = 1000 * this._retryCount++;
+      // increase retry time		
+			// https://github.com/eclipse-rap/org.eclipse.rap/issues/98
+	    // https://github.com/eclipse-rap/org.eclipse.rap/issues/90
+      if( this._retryCount < 1000 ) {
+    		this._retryCount++;  
+        var delay = (this._retryCount <= 5) ? 1000 : 3000;
         rwt.client.Timer.once( this.sendServerPushRequest, this, delay );
       } else {
         this._handleConnectionError();
-      }
+      }		
     } else {
       this._handleServerError( event );
     }

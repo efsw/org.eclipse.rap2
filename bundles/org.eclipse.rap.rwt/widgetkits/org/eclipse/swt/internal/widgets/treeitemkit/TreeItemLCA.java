@@ -109,7 +109,8 @@ public final class TreeItemLCA extends WidgetLCA<TreeItem> {
   }
 
   private static void renderProperties( TreeItem item ) {
-    renderProperty( item, PROP_ITEM_COUNT, item.getItemCount(), DEFAULT_ITEM_COUNT );
+    // tree out of sync: hack: modified to send always the value 
+    renderProperty( item, PROP_ITEM_COUNT, item.getItemCount(), -1 );
     renderProperty( item, PROP_TEXTS, getTexts( item ), null );
     renderProperty( item, PROP_IMAGES, getImages( item ), null );
     WidgetLCAUtil.renderBackground( item, getUserBackground( item ) );
@@ -120,7 +121,8 @@ public final class TreeItemLCA extends WidgetLCA<TreeItem> {
     renderProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ), null );
     renderProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ), null );
     renderProperty( item, PROP_CELL_FONTS, getCellFonts( item ), null );
-    renderProperty( item, PROP_EXPANDED, item.getExpanded(), false );
+    // tree out of sync: hack: modified to send always the value 
+    renderProperty( item, PROP_EXPANDED, item.getExpanded(), !item.getExpanded() );
     renderProperty( item, PROP_CHECKED, item.getChecked(), false );
     renderProperty( item, PROP_GRAYED, item.getGrayed(), false );
   }

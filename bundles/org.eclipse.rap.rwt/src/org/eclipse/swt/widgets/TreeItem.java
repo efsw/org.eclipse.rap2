@@ -244,6 +244,22 @@ public class TreeItem extends Item {
       parent.updateScrollBars();
     }
   }
+  
+  // debug only: prevent call to "checkData" 
+  @Override
+  public String toString() {
+    String string = "*Disposed*";
+    if( !isDisposed() ) {
+      string = "*Wrong Thread*";
+      if( isValidThread() ) {
+        if( isCached() )
+          string = getNameText();
+        else
+          string = "*Cleared*";
+      }
+    }
+    return getName() + " {" + string + "}";
+  }  
 
   private void setEmpty() {
     items = new TreeItem[ 4 ];
@@ -1252,15 +1268,18 @@ public class TreeItem extends Item {
    *              thread that created the receiver</li>
    *              </ul>
    */
+  // tree out of sync: use updated itemCount
   public TreeItem[] getItems() {
+    int itemCount0 = getItemCount();
+    
     checkWidget();
-    TreeItem[] result = new TreeItem[ itemCount ];
+    TreeItem[] result = new TreeItem[ itemCount0 ];
     if( parent.isVirtual() ) {
-      for( int i = 0; i < itemCount; i++ ) {
+      for( int i = 0; i < itemCount0; i++ ) {
         result[ i ] = _getItem( i );
       }
     } else {
-      System.arraycopy( items, 0, result, 0, itemCount );
+      System.arraycopy( items, 0, result, 0, itemCount0 );
     }
     return result;
   }
@@ -1381,8 +1400,12 @@ public class TreeItem extends Item {
    *              thread that created the receiver</li>
    *              </ul>
    */
+  // tree out of sync: check parent disposed 
   public void removeAll() {
     checkWidget();
+    if( !parent.checkData( this, this.index ) ) {
+      error( SWT.ERROR_WIDGET_DISPOSED );
+    }
     for( int i = itemCount - 1; i >= 0; i-- ) {
       if( items[ i ] != null ) {
         items[ i ].dispose();
@@ -1391,7 +1414,7 @@ public class TreeItem extends Item {
       }
     }
     setEmpty();
-  }
+  }   
 
   /**
    * Sets the number of child items contained in the receiver.
@@ -1522,17 +1545,19 @@ public class TreeItem extends Item {
       }
     }
   }
-
+  
+  // tree out of sync: count
   int getInnerHeight() {
-    int innerHeight = itemCount * parent.getItemHeight();
-    for( int i = 0; i < itemCount; i++ ) {
+    int itemCount0 = Math.min( itemCount, items.length );
+    int innerHeight = itemCount0 * parent.getItemHeight();
+    for( int i = 0; i < itemCount0; i++ ) {
       TreeItem item = items[ i ];
       if( item != null && item.getExpanded() ) {
         innerHeight += item.getInnerHeight();
       }
     }
     return innerHeight;
-  }
+  }   
 
   void markCached() {
     if( parent.isVirtual() ) {

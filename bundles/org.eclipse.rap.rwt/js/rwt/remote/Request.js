@@ -121,7 +121,11 @@ rwt.remote.Request.prototype = {
             }
           }
           event.target.dispose();
-        } );
+        } ).catch( function() {
+          if( event.target._error ) {
+            event.target._error( event );
+          }
+        } );      
       }
     } ).catch( function() {
       event.status = 0;

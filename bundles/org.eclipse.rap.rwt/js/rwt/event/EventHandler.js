@@ -469,7 +469,10 @@ rwt.event.EventHandler = {
         return;
       }
       this._focused = false;
-      this.setCaptureWidget( null );
+      // some controls (including Shell) use a mechanism around the captured widget,
+      // simply setting _captureWidget to null may break that mechanism,
+      // a method is necessary to cancel that mechanism gracefully
+      //this.setCaptureWidget( null );
       if( rwt.qx.Class.isDefined( "rwt.widgets.util.PopupManager" ) ) {
         rwt.widgets.util.PopupManager.getInstance().update();
       }

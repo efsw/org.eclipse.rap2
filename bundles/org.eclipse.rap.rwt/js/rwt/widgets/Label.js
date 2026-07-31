@@ -17,7 +17,7 @@ rwt.qx.Class.define( "rwt.widgets.Label", {
 
   construct : function( styles ) {
     this.base( arguments, this._CELLORDER );
-    this.setVerticalChildrenAlign( "top" );
+    this.setVerticalChildrenAlign( "middle" );
     this.setAlignment( "left" );
     this.setAppearance( "label-wrapper" );
     if( styles.WRAP ) {
