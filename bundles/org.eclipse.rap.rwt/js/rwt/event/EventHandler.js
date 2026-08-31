@@ -469,6 +469,15 @@ rwt.event.EventHandler = {
         return;
       }
       this._focused = false;
+      // RAP fork: se il fuoco e' passato a un iframe della stessa pagina (Browser widget),
+      // la contabilita' del fuoco resta ferma sull'ultimo widget del documento RAP: il click
+      // successivo su quello stesso widget non e' una transizione della property focusedChild,
+      // l'apply non gira e element.focus() non viene mai chiamato. Azzerando qui il focusedChild,
+      // il primo click dopo il rientro dall'iframe torna a essere una transizione vera.
+      var active = document.activeElement;
+      if( active && active.tagName === "IFRAME" && this._focusRoot !== null ) {
+        this._focusRoot.setFocusedChild( null );
+      }
       // some controls (including Shell) use a mechanism around the captured widget,
       // simply setting _captureWidget to null may break that mechanism,
       // a method is necessary to cancel that mechanism gracefully
