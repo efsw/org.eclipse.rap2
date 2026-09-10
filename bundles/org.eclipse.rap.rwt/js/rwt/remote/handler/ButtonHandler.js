@@ -54,6 +54,23 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
      * @param {string} secondaryText the new secondary text
      */
     "secondaryText",
+    /**
+     * @name setSecondaryFont
+     * @methodOf Button#
+     * @description Sets the font of the secondary text; the button's preferred width accounts for
+     * it, so it may change the size of the button.
+     * @param {Array|null} font the new font as [ family[], size, bold, italic ] or null for the
+     * themed one
+     */
+    "secondaryFont",
+    /**
+     * @name setSecondaryForeground
+     * @methodOf Button#
+     * @description Sets the color of the secondary text.
+     * @param {int[]|null} color the new color as array [ red, green, blue ] or null for the themed
+     * one
+     */
+    "secondaryForeground",
     "mnemonicIndex",
     "alignment",
     "image",
@@ -85,6 +102,25 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
     },
     "badge" : function( widget, value ) {
       rwt.widgets.util.Badges.setBadge( widget, value );
+    },
+    /*
+     * Colore e font del secondo testo. Arrivano come valore "user" e quindi vincono su quello
+     * dell'appearance, che resta il default del tema: un null qui rimette il valore del tema
+     * invece di spegnere lo stile.
+     */
+    "secondaryForeground" : function( widget, value ) {
+      if( value === null ) {
+        widget.resetSecondaryTextColor();
+      } else {
+        widget.setSecondaryTextColor( rwt.util.Colors.rgbToRgbString( value ) );
+      }
+    },
+    "secondaryFont" : function( widget, value ) {
+      if( value === null ) {
+        widget.resetSecondaryFont();
+      } else {
+        widget.setSecondaryFont( rwt.html.Font.fromArray( value ) );
+      }
     }
   } ),
 

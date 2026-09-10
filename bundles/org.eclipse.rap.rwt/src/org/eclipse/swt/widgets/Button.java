@@ -27,6 +27,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -64,6 +65,8 @@ public class Button extends Control {
 
   private String text = "";
   private String secondaryText = "";
+  private Font secondaryFont;
+  private Color secondaryForeground;
   private boolean selected;
   private boolean grayed;
   private Image image;
@@ -228,6 +231,88 @@ public class Button extends Control {
   public String getSecondaryText() {
     checkWidget();
     return secondaryText;
+  }
+
+  /**
+   * Sets the font of the secondary text, or <code>null</code> to use the one the theme element
+   * <code>Button-SecondaryText</code> gives it.
+   * <p>
+   * The font is part of the measurement: <code>computeSize</code> measures the secondary text with
+   * it, so a bolder or larger font here makes the button ask for more width. Setting it is
+   * therefore the way to have a secondary text that differs in weight or size from the main one -
+   * appending the text to the main one could never do that.
+   * </p>
+   *
+   * @param secondaryFont the new font, or <code>null</code> for the themed one
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setSecondaryText(String)
+   */
+  public void setSecondaryFont( Font secondaryFont ) {
+    checkWidget();
+    if( secondaryFont != null && secondaryFont.isDisposed() ) {
+      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    this.secondaryFont = secondaryFont;
+  }
+
+  /**
+   * Returns the font of the secondary text, or <code>null</code> if it is the themed one.
+   *
+   * @return the font of the secondary text
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setSecondaryFont(Font)
+   */
+  public Font getSecondaryFont() {
+    checkWidget();
+    return secondaryFont;
+  }
+
+  /**
+   * Sets the color of the secondary text, or <code>null</code> to use the one the theme element
+   * <code>Button-SecondaryText</code> gives it.
+   *
+   * @param secondaryForeground the new color, or <code>null</code> for the themed one
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setSecondaryText(String)
+   */
+  public void setSecondaryForeground( Color secondaryForeground ) {
+    checkWidget();
+    if( secondaryForeground != null && secondaryForeground.isDisposed() ) {
+      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    this.secondaryForeground = secondaryForeground;
+  }
+
+  /**
+   * Returns the color of the secondary text, or <code>null</code> if it is the themed one.
+   *
+   * @return the color of the secondary text
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setSecondaryForeground(Color)
+   */
+  public Color getSecondaryForeground() {
+    checkWidget();
+    return secondaryForeground;
   }
 
   /**
@@ -492,7 +577,15 @@ public class Button extends Control {
         if( hasText || hasImage ) {
           width += themeAdapter.getSecondaryTextSpacing( this );
         }
-        Point extent = textExtent( themeAdapter.getSecondaryTextFont( this ),
+        /*
+         * Il font del controllo se c'e', altrimenti quello del tema: la misura deve essere fatta
+         * con lo stesso font che il client scrive sulla cella, e il client fa la stessa scelta -
+         * il valore mandato dal server vince su quello dell'appearance.
+         */
+        Font secondFont = secondaryFont != null
+                        ? secondaryFont
+                        : themeAdapter.getSecondaryTextFont( this );
+        Point extent = textExtent( secondFont,
                                    secondaryText,
                                    SWT.DEFAULT,
                                    isMarkupEnabledFor( this ) );

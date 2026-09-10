@@ -14,6 +14,7 @@ package org.eclipse.swt.internal.widgets.buttonkit;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.hasChanged;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.preserveProperty;
+import static org.eclipse.rap.rwt.remote.JsonMapping.toJson;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.renderClientListeners;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.renderListenSelection;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.renderProperty;
@@ -33,6 +34,7 @@ import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCA;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil;
 import org.eclipse.rap.rwt.remote.RemoteObject;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Button;
 
 
@@ -47,6 +49,8 @@ public final class ButtonLCA extends WidgetLCA<Button> {
 
   private static final String PROP_TEXT = "text";
   private static final String PROP_SECONDARY_TEXT = "secondaryText";
+  private static final String PROP_SECONDARY_FONT = "secondaryFont";
+  private static final String PROP_SECONDARY_FOREGROUND = "secondaryForeground";
   private static final String PROP_MNEMONIC_INDEX = "mnemonicIndex";
   private static final String PROP_IMAGE = "image";
   private static final String PROP_SELECTION = "selection";
@@ -61,6 +65,8 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   public void preserveValues( Button button ) {
     preserveProperty( button, PROP_TEXT, button.getText() );
     preserveProperty( button, PROP_SECONDARY_TEXT, button.getSecondaryText() );
+    preserveProperty( button, PROP_SECONDARY_FONT, button.getSecondaryFont() );
+    preserveProperty( button, PROP_SECONDARY_FOREGROUND, button.getSecondaryForeground() );
     preserveProperty( button, PROP_IMAGE, button.getImage() );
     preserveProperty( button, PROP_SELECTION, Boolean.valueOf( button.getSelection() ) );
     preserveProperty( button, PROP_GRAYED, Boolean.valueOf( button.getGrayed() ) );
@@ -83,6 +89,8 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     WidgetLCAUtil.renderCustomVariant( button );
     renderText( button );
     renderProperty( button, PROP_SECONDARY_TEXT, button.getSecondaryText(), "" );
+    renderSecondaryFont( button );
+    renderProperty( button, PROP_SECONDARY_FOREGROUND, button.getSecondaryForeground(), null );
     renderMnemonicIndex( button );
     renderProperty( button, PROP_IMAGE, button.getImage(), null );
     renderProperty( button, PROP_ALIGNMENT, getAlignment( button ), DEFAULT_ALIGNMENT );
@@ -121,6 +129,17 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     if( hasChanged( button, PROP_TEXT, newValue, "" ) ) {
       String text = removeAmpersandControlCharacters( newValue );
       getRemoteObject( button ).set( PROP_TEXT, text );
+    }
+  }
+
+  /*
+   * Il font non ha un renderProperty suo in WidgetLCAUtil - c'e' per gli array di font, non per uno
+   * solo - quindi si scrive come lo scrive renderFont: confronto col valore conservato e json.
+   */
+  private static void renderSecondaryFont( Button button ) {
+    Font newValue = button.getSecondaryFont();
+    if( hasChanged( button, PROP_SECONDARY_FONT, newValue, null ) ) {
+      getRemoteObject( button ).set( PROP_SECONDARY_FONT, toJson( newValue ) );
     }
   }
 
