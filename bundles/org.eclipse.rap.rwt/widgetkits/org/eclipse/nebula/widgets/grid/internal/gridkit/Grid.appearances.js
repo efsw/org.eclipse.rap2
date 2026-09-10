@@ -93,9 +93,10 @@ var appearances = {
       var borderColors = [ null, null, null, null ];
       var borderWidths = [ 0, 0, 0, 0 ];
       var borderStyles = [ "solid", "solid", "solid", "solid" ];
-      // "boxed": l'intestazione ha una scatola sua, e le righe della fascia le farebbero da
-      // contorno doppio - vedi GridHeader._renderHeaderLabel
-      if( !states.dummy && !states.footer && !states.boxed ) {
+      // due stati spengono il separatore verticale: "boxed" quando l'intestazione ha una scatola
+      // sua, e la riga le farebbe da contorno doppio; "noSeparator" quando la griglia non vuole
+      // le righe fra le intestazioni - vedi GridHeader._renderHeaderLabel
+      if( !states.dummy && !states.footer && !states.boxed && !states.noSeparator ) {
         var gridLineStates = { "vertical" : true, "header" : true };
         var tvGrid = new rwt.theme.ThemeValues( gridLineStates );
         var gridColor = tvGrid.getCssColor( "Grid-GridLine", "color" );

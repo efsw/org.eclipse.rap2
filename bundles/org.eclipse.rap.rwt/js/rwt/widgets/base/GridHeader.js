@@ -24,7 +24,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
     this._footer = argsMap.footer ? true : false;
     this._baseAppearance = argsMap.appearance;
     this._config = argsMap.config;
-this._dummyColumn = this._createDummyColumn();
+    this._dummyColumn = this._createDummyColumn();
     this._currentDragColumn = null;
     this._feedbackLabel = null;
     this._labelToColumnMap = {};
@@ -159,7 +159,8 @@ this._dummyColumn = this._createDummyColumn();
       }
       this._renderLabelY( label, column );
       label.setZIndex( column.isFixed() ? 1e7 : 1 );
-/*
+
+      /*
        * Gli attributi html per ultimi, e non per ordine di comodo: le dichiarazioni css arrivano da
        * qui, e sopra si sono appena scritti font e colori.
        */
@@ -176,6 +177,12 @@ this._dummyColumn = this._createDummyColumn();
        * rimetterebbe al primo passaggio del mouse.
        */
       label.toggleState( "boxed", parts.boxed );
+      /*
+       * E la riga verticale fra un'intestazione e l'altra, che la griglia puo' non volere: la
+       * disegna anche lei l'appearance, come bordo destro dell'etichetta, quindi si spegne allo
+       * stesso modo - con uno stato.
+       */
+      label.toggleState( "noSeparator", !parts.separator );
     },
 
     /*
@@ -191,9 +198,20 @@ this._dummyColumn = this._createDummyColumn();
      * risultato e' una COPIA della mappa: quella del modello di colonna non si tocca.
      */
     _splitHtmlAttributes : function( attributes ) {
-      var style = attributes ? attributes[ "style" ] : null;
+      var result = {};
+      for( var key in attributes ) {
+        result[ key ] = attributes[ key ];
+      }
+      /*
+       * Il separatore verticale: lo spegne un attributo, che qui diventa uno stato e nel DOM non
+       * arriva - dice una cosa all'appearance, che e' l'unica a disegnare quel bordo, e niente al
+       * browser.
+       */
+      var separator = result[ "data-header-separator" ] !== "false";
+      delete result[ "data-header-separator" ];
+      var style = result[ "style" ];
       if( !style ) {
-        return { attributes : attributes, shape : null, boxed : false };
+        return { attributes : result, shape : null, boxed : false, separator : separator };
       }
       var probe = document.createElement( "div" );
       probe.style.cssText = style;
@@ -221,16 +239,17 @@ this._dummyColumn = this._createDummyColumn();
           rest += declaration;
         }
       }
-      var result = {};
-      for( var key in attributes ) {
-        result[ key ] = attributes[ key ];
-      }
       if( rest === "" ) {
         delete result[ "style" ];
       } else {
         result[ "style" ] = rest;
       }
-      return { attributes : result, shape : shape === "" ? null : shape, boxed : boxed };
+      return {
+        attributes : result,
+        shape : shape === "" ? null : shape,
+        boxed : boxed,
+        separator : separator
+      };
     },
 
     /*
@@ -273,7 +292,7 @@ this._dummyColumn = this._createDummyColumn();
                            + "pointer-events:none;z-index:-1;" + shape;
     },
 
-_renderLabelY : function( label, column ) {
+    _renderLabelY : function( label, column ) {
       if( column.isGroup() ) {
         label.setTop( 0 );
         label.setHeight( column.getHeight() );
