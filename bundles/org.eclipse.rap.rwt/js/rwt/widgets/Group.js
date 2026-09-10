@@ -24,6 +24,7 @@ rwt.qx.Class.define( "rwt.widgets.Group", {
     this.add( this._legend );
     this.setOverflow( "hidden" );
     this.setEnableElementFocus( false );
+    this.setAriaRole( "group" );
     var themeValues = new rwt.theme.ThemeValues( {} );
     this._themeBackgroundColor = themeValues.getCssColor( "Group-Label", "background-color" );
     themeValues.dispose();

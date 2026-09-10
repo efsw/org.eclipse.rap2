@@ -17,6 +17,8 @@ rwt.qx.Class.define("rwt.widgets.ListItem", {
 
   construct : function() {
     this.base( arguments, [ "label" ] );
+    this.setAriaRole( "option" );
+    this.setAriaSelectionAttribute( "aria-selected" );
     this.setHorizontalChildrenAlign( "left" );
     // Fix for Bug 396835 - [List][Combo] Lists can scroll over maximum in IE7/8
     this.setContainerOverflow( false );

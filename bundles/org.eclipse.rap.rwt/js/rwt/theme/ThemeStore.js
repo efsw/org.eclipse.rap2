@@ -137,12 +137,34 @@ rwt.qx.Class.define( "rwt.theme.ThemeStore", {
       this._fillNamedColors( theme );
     },
 
+    /**
+     * Re-reads the theme values a stylesheet has redefined through the css custom properties, and
+     * repaints the widgets with them. Called when what applies may have changed without the theme
+     * itself changing - the system switching to its dark appearance, for instance.
+     */
+    refresh : function() {
+      rwt.theme.CssVariables.getInstance().refresh();
+      var manager = rwt.theme.AppearanceManager.getInstance();
+      var theme = manager.getCurrentTheme();
+      if( theme ) {
+        manager.clearCache();
+        if( rwt.runtime.System.getInstance().getUiReady() ) {
+          var clientDocument = rwt.widgets.base.ClientDocument.getInstance();
+          clientDocument._recursiveAppearanceThemeUpdate( theme, theme );
+        }
+      }
+    },
+
     /////////////
     // Client API
 
     getColor : function( element, states, property, theme ) {
-      var key = this._getCssValue( element, states, property, theme );
-      var result = this._values.colors[ key ];
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getColor" );
+      if( override !== null ) {
+        return override;
+      }
+      var result = this._values.colors[ resolved.key ];
       if( result instanceof Array ) {
         result = "#" + rwt.util.Colors.rgbToHexString( result );
       }
@@ -150,8 +172,12 @@ rwt.qx.Class.define( "rwt.theme.ThemeStore", {
     },
 
     getAlpha : function( element, states, property, theme ) {
-      var key = this._getCssValue( element, states, property, theme );
-      var color = this._values.colors[ key ];
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getAlpha" );
+      if( override !== null ) {
+        return override;
+      }
+      var color = this._values.colors[ resolved.key ];
       var result = 1;
       if( color instanceof Array ) {
         result = color[ 3 ];
@@ -167,21 +193,27 @@ rwt.qx.Class.define( "rwt.theme.ThemeStore", {
     },
 
     getDimension : function( element, states, property, theme ) {
-      var key = this._getCssValue( element, states, property, theme );
-      return this._values.dimensions[ key ];
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getDimension" );
+      return override !== null ? override : this._values.dimensions[ resolved.key ];
     },
 
     getBoxDimensions : function( element, states, property, theme ) {
-      var key = this._getCssValue( element, states, property, theme );
-      return this._values.boxdims[ key ];
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getBoxDimensions" );
+      return override !== null ? override : this._values.boxdims[ resolved.key ];
     },
 
     getFloat : function( element, states, property, theme ) {
-      return parseFloat( this._getCssValue( element, states, property, theme ) );
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getFloat" );
+      return override !== null ? override : parseFloat( resolved.key );
     },
 
     getIdentifier : function( element, states, property, theme ) {
-      return this._getCssValue( element, states, property, theme );
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getIdentifier" );
+      return override !== null ? override : resolved.key;
     },
 
     getImage : function( element, states, property, theme ) {
@@ -228,7 +260,12 @@ rwt.qx.Class.define( "rwt.theme.ThemeStore", {
     },
 
     getFont : function( element, states, property, theme ) {
-      var key = this._getCssValue( element, states, property, theme );
+      var resolved = this._resolve( element, states, property, theme );
+      var override = this._getOverride( resolved, element, property, "getFont" );
+      if( override !== null ) {
+        return override;
+      }
+      var key = resolved.key;
       var value = this._values.fonts[ key ];
       if( !( value instanceof rwt.html.Font ) ) {
         var font = new rwt.html.Font();
@@ -341,7 +378,16 @@ rwt.qx.Class.define( "rwt.theme.ThemeStore", {
     // Internals
 
     _getCssValue : function( element, states, property, theme ) {
-      var result;
+      return this._resolve( element, states, property, theme ).key;
+    },
+
+    /**
+     * Resolves a property to the key of its value, and tells whether the value that matched is
+     * the one that applies without any constraint. Only that one has a css custom property of its
+     * own, and only that one can therefore be overridden by a stylesheet.
+     */
+    _resolve : function( element, states, property, theme ) {
+      var result = { key : undefined, isDefault : false };
       if( theme == null ) {
         theme = this._currentTheme;
       }
@@ -352,15 +398,27 @@ rwt.qx.Class.define( "rwt.theme.ThemeStore", {
         var values = this._cssValues[ theme ][ element ][ property ];
         for( var i = 0; i < values.length; i++ ) {
           if( this._matches( states, element, values[ i ][ 0 ] ) ) {
-            result = values[ i ][ 1 ];
+            result.key = values[ i ][ 1 ];
+            result.isDefault = values[ i ][ 0 ].length === 0;
             break;
           }
         }
       }
-      if( result === undefined && theme != this.fallbackTheme ) {
-        result = this._getCssValue( element, states, property, this.fallbackTheme );
+      if( result.key === undefined && theme != this.fallbackTheme ) {
+        result = this._resolve( element, states, property, this.fallbackTheme );
       }
       return result;
+    },
+
+    /**
+     * Returns the value a stylesheet of the application has given to this property, or null when
+     * it left it alone.
+     */
+    _getOverride : function( resolved, element, property, reader ) {
+      if( !resolved.isDefault ) {
+        return null;
+      }
+      return rwt.theme.CssVariables.getInstance()[ reader ]( element, property );
     },
 
     _matches : function( states, element, constraints ) {

@@ -64,6 +64,57 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     _FLUSH_PHASE_DISPLAY : 6,
     _FLUSH_PHASE_DISPOSE : 7,
 
+    ///////////////
+    // CSS CLASSES
+
+    _cssTypeClasses : {},
+    _cssStateClasses : {},
+
+    /**
+     * Returns the css class that identifies the type of a widget, derived from the simple name
+     * of its class: "rwt-Button" for rwt.widgets.Button.
+     */
+    getCssTypeClass : function( classname ) {
+      var cache = rwt.widgets.base.Widget._cssTypeClasses;
+      var result = cache[ classname ];
+      if( result === undefined ) {
+        result = "rwt-" + classname.substr( classname.lastIndexOf( "." ) + 1 );
+        cache[ classname ] = result;
+      }
+      return result;
+    },
+
+    /**
+     * Returns the css class for a widget state. The three kinds of state are kept apart:
+     * "rwt_PUSH" (a SWT style flag) becomes "rwt-style-push", "variant_foo" (the custom variant)
+     * becomes "rwt-variant-foo", and any other state - "selected", "dropDown", "parent_unfocused"
+     * - becomes "is-selected", "is-drop-down", "is-parent-unfocused".
+     *
+     * Everything but the variant is written in one shape, all lower case and separated by
+     * hyphens, so that a stylesheet does not have to know whether the state it addresses happened
+     * to be spelled in camel case inside the client. The name of a variant comes from the
+     * application and is left exactly as it was given.
+     */
+    getCssStateClass : function( state ) {
+      var cache = rwt.widgets.base.Widget._cssStateClasses;
+      var result = cache[ state ];
+      if( result === undefined ) {
+        if( state.indexOf( "rwt_" ) === 0 ) {
+          result = "rwt-style-" + rwt.widgets.base.Widget._toKebabCase( state.substr( 4 ) );
+        } else if( state.indexOf( "variant_" ) === 0 ) {
+          result = "rwt-variant-" + state.substr( 8 );
+        } else {
+          result = "is-" + rwt.widgets.base.Widget._toKebabCase( state );
+        }
+        cache[ state ] = result;
+      }
+      return result;
+    },
+
+    _toKebabCase : function( value ) {
+      return value.replace( /([a-z0-9])([A-Z])/g, "$1-$2" ).toLowerCase().replace( /_/g, "-" );
+    },
+
     _initAutoFlush : function( phase ) {
       if( rwt.widgets.base.Widget._autoFlushTimeout == null ) {
         // RAP: Fix for bug 303162
@@ -1441,6 +1492,9 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     _computedMaxHeightTypeAuto : false,
     _computedMaxHeightTypeFlex : false,
     _customVariant : null,
+    _cssClasses : null,
+    _ariaRole : null,
+    _ariaSelectionAttribute : null,
 
     ///////////////
     // apply layout
@@ -1838,6 +1892,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
         // link element and style reference
         this._element = value;
         this._style = value.style;
+        this._cssClasses = null;
         if( this._targetNodeEnabled ) {
           this.prepareEnhancedBorder( true );
         }
@@ -1845,6 +1900,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
         this._applyStyleProperties(value);
         this._applyHtmlProperties(value);
         this._applyHtmlAttributes(value);
+        this._renderCssClasses();
         this._applyElementData(value);
         // send out create event
         this.dispatchSimpleEvent( "create" );
@@ -2123,7 +2179,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     // RECOMPUTE RANGES
 
     _recomputeRangeX : rwt.util.Variant.select("qx.client", {
-      "trident|webkit|blink" : function() {
+      "webkit|blink" : function() {
         if (this._computedLeftTypeNull || this._computedRightTypeNull) {
           return false;
         }
@@ -2136,7 +2192,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     } ),
 
     _recomputeRangeY : rwt.util.Variant.select("qx.client", {
-      "trident|webkit|blink" : function() {
+      "webkit|blink" : function() {
         if (this._computedTopTypeNull || this._computedBottomTypeNull) {
           return false;
         }
@@ -2152,7 +2208,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     // RECOMPUTE STRETCHING
 
     _recomputeStretchingX : rwt.util.Variant.select("qx.client", {
-      "trident|webkit|blink" : function() {
+      "webkit|blink" : function() {
         if (this.getAllowStretchX() && this._computedWidthTypeNull) {
           this._computedWidthValue = null;
           this.addToLayoutChanges("width");
@@ -2169,7 +2225,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     } ),
 
     _recomputeStretchingY : rwt.util.Variant.select("qx.client", {
-      "trident|webkit|blink" : function() {
+      "webkit|blink" : function() {
         if (this.getAllowStretchY() && this._computedHeightTypeNull) {
           this._computedHeightValue = null;
           this.addToLayoutChanges("height");
@@ -2818,6 +2874,103 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
       }
     },
 
+    ///////////////
+    // CSS CLASSES
+
+    /**
+     * Writes the css classes of this widget to its element. The result is the type of the widget,
+     * its appearance, one class for every state, and finally the value of the "class" attribute
+     * if the application has set one:
+     *
+     *   rwt-Button rwt-appearance-push-button rwt-style-push is-over my-own-class
+     *
+     * Called whenever the states or the appearance change, so it has to stay cheap: the computed
+     * value is compared with the last one and the element is only touched when it differs.
+     */
+    _renderCssClasses : function() {
+      if( !this._element ) {
+        return;
+      }
+      var Widget = rwt.widgets.base.Widget;
+      var classes = [ Widget.getCssTypeClass( this.classname ) ];
+      var appearance = this.getAppearance();
+      if( appearance ) {
+        classes.push( "rwt-appearance-" + appearance );
+      }
+      var states = this.__states;
+      if( states ) {
+        for( var state in states ) {
+          classes.push( Widget.getCssStateClass( state ) );
+        }
+      }
+      var custom = this._htmlAttributes ? this._htmlAttributes[ "class" ] : null;
+      if( custom ) {
+        classes.push( custom );
+      }
+      var value = classes.join( " " );
+      if( this._cssClasses !== value ) {
+        this._cssClasses = value;
+        this._element.className = value;
+      }
+    },
+
+    ////////
+    // ARIA
+
+    /**
+     * Sets the ARIA role of this widget, rendered as "role" attribute on its element. Setting a
+     * role also enables the rendering of the generic state attributes, see _renderAriaStates.
+     */
+    setAriaRole : function( role ) {
+      this._ariaRole = role;
+      this._storeHtmlAttribute( "role", role );
+      this._renderAriaStates();
+    },
+
+    getAriaRole : function() {
+      return this._ariaRole || null;
+    },
+
+    /**
+     * Name of the attribute that carries the "selected" state of this widget: "aria-checked" for
+     * a check box, "aria-pressed" for a toggle button, "aria-selected" for a tab. Null - the
+     * default - means that the state is not reflected at all.
+     */
+    setAriaSelectionAttribute : function( attribute ) {
+      this._ariaSelectionAttribute = attribute;
+      this._renderAriaStates();
+    },
+
+    /**
+     * Sets a single ARIA attribute. A null value removes it. Numbers and booleans are converted,
+     * so setAriaAttribute( "aria-level", 2 ) works as expected.
+     */
+    setAriaAttribute : function( name, value ) {
+      this._storeHtmlAttribute( name, value === null || value === undefined ? null : "" + value );
+    },
+
+    /**
+     * Renders the ARIA attributes that follow the widget states. Only widgets that declared a
+     * role take part: without one, the attributes would have nothing to qualify.
+     */
+    _renderAriaStates : function() {
+      if( !this._ariaRole ) {
+        return;
+      }
+      var states = this.__states || {};
+      this._storeHtmlAttribute( "aria-disabled", states.disabled ? "true" : null );
+      var selectionAttribute = this._ariaSelectionAttribute;
+      if( selectionAttribute ) {
+        var selected = "false";
+        if( states.grayed ) {
+          selected = "mixed";
+        } else if( states.selected ) {
+          selected = "true";
+        }
+        this._storeHtmlAttribute( selectionAttribute, selected );
+      }
+    },
+
     /////////////////////
     // APPEARANCE SUPPORT
 
@@ -2857,6 +3010,8 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
       // HACK: Is there a cleaner way to implement this?
       // Maybe not use the appearance for this, but a simple property and event handler combination?
       this._applyStateStyleFocus(this.__states);
+      this._renderCssClasses();
+      this._renderAriaStates();
       var vAppearance = this.getAppearance();
       if (vAppearance) {
           var r = rwt.theme.AppearanceManager.getInstance().styleFrom(vAppearance, this.__states);
@@ -2864,6 +3019,9 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
             this._styleFromMap(r);
           }
       }
+      // le dichiarazioni degli attributi html vanno scritte DOPO quelle dell'appearance: vedi
+      // HtmlAttributesMixin._reapplyInlineStyle
+      this._reapplyInlineStyle();
     },
 
     _resetAppearanceThemeWrapper : function(vNewAppearanceTheme, vOldAppearanceTheme) {
@@ -2907,6 +3065,7 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
       if (!this.__states) {
         this.__states = {};
       }
+      this._renderCssClasses();
       var vAppearanceManager = rwt.theme.AppearanceManager.getInstance();
       if (value) {
         var vNewAppearanceProperties = vAppearanceManager.styleFrom(value, this.__states) || {};
@@ -2965,7 +3124,16 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
     _applyHtmlAttributes : function( element ) {
       if( this._htmlAttributes ) {
         for( var property in this._htmlAttributes ) {
-          element.setAttribute( property, this._htmlAttributes[ property ] );
+          // "class" is rendered by _renderCssClasses together with the generated classes, and
+          // "style" is applied declaration by declaration by _applyInlineStyle
+          if( property !== "class" && property !== "style" ) {
+            element.setAttribute( property, this._htmlAttributes[ property ] );
+          }
+        }
+        if( this._htmlAttributes[ "style" ] ) {
+          // the element is a new one, so there is nothing left on it to remove
+          this._inlineStyleProperties = null;
+          this._applyInlineStyle( element, this._htmlAttributes[ "style" ] );
         }
       }
     },
@@ -3710,6 +3878,9 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
       "_styleProperties",
       "_htmlProperties",
       "_htmlAttributes",
+      "_cssClasses",
+      "_ariaRole",
+      "_ariaSelectionAttribute",
       "__states",
       "_jobQueue",
       "_layoutChanges",

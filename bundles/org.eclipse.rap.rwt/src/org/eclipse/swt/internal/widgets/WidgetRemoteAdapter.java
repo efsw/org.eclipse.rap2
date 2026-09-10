@@ -11,7 +11,9 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.eclipse.rap.rwt.internal.lifecycle.DisposedWidgets;
@@ -38,6 +40,10 @@ public class WidgetRemoteAdapter implements RemoteAdapter, SerializableCompatibi
   private transient Runnable[] renderRunnables;
   private transient Object[] data;
   private transient String variant;
+  // Not transient: unlike the fields above these are not preserve buffers but state of the
+  // widget itself, which has to survive the serialization of the UI session.
+  private Map<String, String> htmlAttributes;
+  private boolean htmlAttributesChanged;
 
   public WidgetRemoteAdapter( String id ) {
     this.id = id;
@@ -118,6 +124,42 @@ public class WidgetRemoteAdapter implements RemoteAdapter, SerializableCompatibi
 
   public String getPreservedVariant() {
     return variant;
+  }
+
+  /**
+   * Sets an HTML attribute to be rendered on the widget element. A <code>null</code> value
+   * removes the attribute.
+   */
+  public void setHtmlAttribute( String name, String value ) {
+    if( value == null ) {
+      if( htmlAttributes != null && htmlAttributes.containsKey( name ) ) {
+        htmlAttributes.remove( name );
+        htmlAttributesChanged = true;
+      }
+    } else {
+      if( htmlAttributes == null ) {
+        htmlAttributes = new LinkedHashMap<>();
+      }
+      if( !value.equals( htmlAttributes.get( name ) ) ) {
+        htmlAttributes.put( name, value );
+        htmlAttributesChanged = true;
+      }
+    }
+  }
+
+  public Map<String, String> getHtmlAttributes() {
+    if( htmlAttributes == null ) {
+      return Collections.emptyMap();
+    }
+    return Collections.unmodifiableMap( htmlAttributes );
+  }
+
+  public boolean hasHtmlAttributesChanged() {
+    return htmlAttributesChanged;
+  }
+
+  public void clearHtmlAttributesChanged() {
+    htmlAttributesChanged = false;
   }
 
   public void clearPreserved() {

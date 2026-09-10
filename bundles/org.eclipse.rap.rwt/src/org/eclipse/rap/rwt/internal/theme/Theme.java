@@ -34,6 +34,7 @@ public class Theme {
   private CssValuesMap valuesMap;
 
   private String registeredLocation;
+  private String cssVariablesLocation;
 
   private CssElement[] elements;
 
@@ -107,10 +108,21 @@ public class Theme {
     return registeredLocation;
   }
 
+  /**
+   * Returns the location of the stylesheet that carries the default values of this theme as CSS
+   * custom properties, or <code>null</code> if the theme has not been registered yet.
+   *
+   * @see CssVariablesWriter
+   */
+  public String getCssVariablesLocation() {
+    return cssVariablesLocation;
+  }
+
   public void registerResources( ApplicationContext applicationContext ) {
     try {
       registerThemeResources( applicationContext );
       registerThemeStoreFile( applicationContext );
+      registerCssVariablesFile( applicationContext );
     } catch( IOException ioe ) {
       throw new ThemeManagerException( "Failed to register theme resources for theme " + id, ioe );
     }
@@ -130,6 +142,12 @@ public class Theme {
     String name = "rap-" + jsId + ".json";
     String code = storeWriter.createJson();
     registeredLocation = registerResource( applicationContext, name, code );
+  }
+
+  private void registerCssVariablesFile( ApplicationContext applicationContext ) {
+    CssVariablesWriter writer = new CssVariablesWriter( applicationContext, this, elements );
+    String name = "rap-" + jsId + ".css";
+    cssVariablesLocation = registerResource( applicationContext, name, writer.createCss() );
   }
 
   private static void registerResource( ApplicationContext applicationContext, ThemeResource value )

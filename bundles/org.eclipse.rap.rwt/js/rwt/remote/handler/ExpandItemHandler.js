@@ -26,6 +26,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.ExpandItem", {
 
   properties : [
     "customVariant",
+    "htmlAttributes",
     "bounds",
     "text",
     "image",
@@ -35,6 +36,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.ExpandItem", {
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "bounds" : function( widget, value ) {
       widget.setLeft( value[ 0 ] );

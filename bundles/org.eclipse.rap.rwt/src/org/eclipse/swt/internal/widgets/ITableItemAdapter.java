@@ -22,5 +22,7 @@ public interface ITableItemAdapter {
   Color[] getCellBackgrounds();
   Color[] getCellForegrounds();
   Font[] getCellFonts();
+  String[] getCellStyles();
+  String[] getCellBoxStyles();
 
 }

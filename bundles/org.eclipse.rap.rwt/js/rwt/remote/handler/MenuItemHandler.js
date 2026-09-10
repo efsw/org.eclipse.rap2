@@ -53,10 +53,14 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.MenuItem", {
     "toolTip",
     "selection",
     "customVariant",
+    "htmlAttributes",
     "data"
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "menu" : function( widget, value ) {
       if( !widget.hasState( "rwt_SEPARATOR" ) ) {

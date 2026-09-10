@@ -27,6 +27,8 @@ rwt.qx.Class.define( "rwt.widgets.ExpandItem", {
     this._header.addEventListener( "click", this._onClick, this );
     this._header.addEventListener( "mouseover", this._onMouseOver, this );
     this._header.addEventListener( "mouseout", this._onMouseOut, this );
+    this._header.setAriaRole( "button" );
+    this._header.setAriaAttribute( "aria-expanded", "false" );
     this.add( this._header );
     // Set the appearance after _header is created
     this.setAppearance( "expand-item" );
@@ -71,6 +73,7 @@ rwt.qx.Class.define( "rwt.widgets.ExpandItem", {
       this._expanded = expanded;
       this.toggleState( "expanded", expanded );
       this._header.toggleState( "expanded", expanded );
+      this._header.setAriaAttribute( "aria-expanded", expanded ? "true" : "false" );
     },
 
     getExpanded : function() {

@@ -19,6 +19,22 @@ rwt.qx.Class.define( "rwt.widgets.ToolItem", {
     this.base( arguments, itemType );
     this._isDropDown = false;
     this.setAppearance( "toolbar-button" );
+    switch( itemType ) {
+      case "check":
+        this.setAriaRole( "checkbox" );
+        this.setAriaSelectionAttribute( "aria-checked" );
+      break;
+      case "radio":
+        this.setAriaRole( "radio" );
+        this.setAriaSelectionAttribute( "aria-checked" );
+      break;
+      case "dropDown":
+        this.setAriaRole( "button" );
+        this.setAriaAttribute( "aria-haspopup", "menu" );
+      break;
+      default:
+        this.setAriaRole( "button" );
+    }
     if( itemType == "dropDown" ) {
       this._isDropDown = true;
       this._isSelectable = false;

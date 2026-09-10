@@ -152,22 +152,14 @@ rwt.qx.Class.define( "rwt.runtime.System", {
     },
 
     _isBrowserSupported : function() {
-      var result = true;
-      var engine = rwt.client.Client.getEngine();
-      var version = rwt.client.Client.getMajor();
-      if( engine === "trident" && version < 9 ) {
-        result = false;
-      }
-      return result;
+      // Every browser that still receives updates is supported; what used to be checked here was
+      // the version of Internet Explorer.
+      return true;
     },
 
     _isModeSupported : function() {
-      var result = true;
-      var engine = rwt.client.Client.getEngine();
-      if( engine === "trident" && document.documentMode < 9 ) {
-        result = false;
-      }
-      return result;
+      // Quirks mode was only ever a concern with Internet Explorer.
+      return true;
     },
 
     _isXHRSupported : function() {

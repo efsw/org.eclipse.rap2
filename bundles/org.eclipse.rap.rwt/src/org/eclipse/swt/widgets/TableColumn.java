@@ -25,6 +25,7 @@ import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.SerializableCompatibility;
@@ -63,6 +64,9 @@ public class TableColumn extends Item {
   private boolean resizable;
   private boolean moveable;
   private boolean packed;
+  private Font font;
+  private Color background;
+  private Color foreground;
 
   /**
    * Constructs a new instance of this class given its parent
@@ -273,6 +277,154 @@ public class TableColumn extends Item {
       processNextColumnsMoveEvent();
       packed = false;
     }
+  }
+
+
+  /**
+   * Sets the font that the header of the receiver uses, or null to use the font of the parent
+   * Table.
+   * <p>
+   * The font is not only painted: the header sizes itself on it. The height of the header row is
+   * the tallest of the fonts of its columns, and the preferred width of this column - what
+   * <code>pack</code> computes - is measured with this font. That is the reason this is a property
+   * of the widget and not something a stylesheet can do on the client: a font declared only in the
+   * browser would be painted large and then clipped by a header sized for a smaller one.
+   * </p>
+   * <p>
+   * The width already set is left alone, as it is when the text changes: call <code>pack</code>
+   * afterwards to have it recomputed.
+   * </p>
+   *
+   * @param font the new font, or null to use the parent's font
+   * @exception IllegalArgumentException <ul>
+   *              <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
+   *              </ul>
+   * @exception SWTException <ul>
+   *              <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *              <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
+   *              receiver</li>
+   *              </ul>
+   * @since RAP fork: per column header font
+   */
+  public void setFont( Font font ) {
+    checkWidget();
+    if( font != null && font.isDisposed() ) {
+      error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    if( !sameFont( this.font, font ) ) {
+      this.font = font;
+      // l'altezza dell'intestazione di Table non e' in cache: si ricalcola da se'
+      parent.redraw();
+    }
+  }
+
+  /**
+   * Returns the font of the header of the receiver, or null when it uses the font of the parent
+   * Table.
+   *
+   * @see #setFont(Font)
+   * @since RAP fork: per column header font
+   */
+  public Font getFont() {
+    checkWidget();
+    return font;
+  }
+
+  /**
+   * The font this header is measured and painted with: its own when it has one, otherwise the one
+   * of the parent Table. Never null unless the parent has no font either.
+   */
+  Font getHeaderFont() {
+    return font != null ? font : parent.getHeaderFont();
+  }
+
+  private static boolean sameFont( Font font1, Font font2 ) {
+    return font1 == null ? font2 == null : font1.equals( font2 );
+  }
+
+
+  /**
+   * Sets the background colour of the header of the receiver, or null to use the one of the parent
+   * Table.
+   * <p>
+   * A colour of its own on a column wins over <code>set&#72;eaderBackground</code> on the parent,
+   * which stays the colour of every other header.
+   * </p>
+   *
+   * @param color the new colour, or null to use the parent's
+   * @exception IllegalArgumentException <ul>
+   *              <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
+   *              </ul>
+   * @exception SWTException <ul>
+   *              <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *              <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
+   *              receiver</li>
+   *              </ul>
+   * @since RAP fork: per column header colours
+   */
+  public void setBackground( Color color ) {
+    checkWidget();
+    if( color != null && color.isDisposed() ) {
+      error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    if( !sameColor( background, color ) ) {
+      background = color;
+      parent.redraw();
+    }
+  }
+
+  /**
+   * Returns the background colour of the header of the receiver, or null when it uses the one of
+   * the parent Table.
+   *
+   * @see #setBackground(Color)
+   * @since RAP fork: per column header colours
+   */
+  public Color getBackground() {
+    checkWidget();
+    return background;
+  }
+
+  /**
+   * Sets the foreground colour of the header of the receiver, or null to use the one of the parent
+   * Table.
+   *
+   * @param color the new colour, or null to use the parent's
+   * @exception IllegalArgumentException <ul>
+   *              <li>ERROR_INVALID_ARGUMENT - if the argument has been disposed</li>
+   *              </ul>
+   * @exception SWTException <ul>
+   *              <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *              <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
+   *              receiver</li>
+   *              </ul>
+   * @since RAP fork: per column header colours
+   */
+  public void setForeground( Color color ) {
+    checkWidget();
+    if( color != null && color.isDisposed() ) {
+      error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    if( !sameColor( foreground, color ) ) {
+      foreground = color;
+      parent.redraw();
+    }
+  }
+
+  /**
+   * Returns the foreground colour of the header of the receiver, or null when it uses the one of
+   * the parent Table.
+   *
+   * @see #setForeground(Color)
+   * @since RAP fork: per column header colours
+   */
+  public Color getForeground() {
+    checkWidget();
+    return foreground;
+  }
+
+  private static boolean sameColor( Color color1, Color color2 ) {
+    return color1 == null ? color2 == null : color1.equals( color2 );
   }
 
   /**
@@ -521,7 +673,7 @@ public class TableColumn extends Item {
   final int getPreferredWidth () {
     // Compute width from the column itself
     int result = 0;
-    Font font = parent.getHeaderFont();
+    Font font = getHeaderFont();
     if( text.length() > 0 ) {
       if( text.indexOf( '\n' ) != -1 ) {
         result = TextSizeUtil.textExtent( font, text, 0 ).x;

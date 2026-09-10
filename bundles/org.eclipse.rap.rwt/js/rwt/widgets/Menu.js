@@ -26,6 +26,7 @@ rwt.qx.Class.define( "rwt.widgets.Menu", {
     this._openItem = null;
     this._itemsHiddenFlag = false;
     this.setAppearance( "menu" );
+    this.setAriaRole( "menu" );
     this._maxCellWidths = [ null, null, null, null, null ];
     this._layout.set( {
       top : 0,

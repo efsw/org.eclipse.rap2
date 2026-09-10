@@ -44,10 +44,12 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
     this.$overlay = null;
     this.$treeColumnParts = [];
     this._lastAttributes = {};
+    this._cssClasses = null;
     this.$cellLabels = [];
     this.$cellImages = [];
     this.$cellCheckBoxes = [];
     this.$cellBackgrounds = [];
+    this.$cellBoxes = [];
     this.$indentIcons = [];
     this._usedIdentIcons = 0;
     this._cellsRendered = 0;
@@ -65,6 +67,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
     this.$cellImages = null;
     this.$cellCheckBoxes = null;
     this.$cellBackgrounds = null;
+    this.$cellBoxes = null;
     this.$indentIcons = null;
     this._item = null;
     this._gridConfig = null;
@@ -94,7 +97,54 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
       this._renderHeight();
       this._renderOverlay();
       this._renderHtmlAttributes();
+      this._renderCssClasses();
+      this._renderAriaAttributes();
       this.dispatchSimpleEvent( "itemRendered", item );
+    },
+
+    /**
+     * Writes the css classes of the row: "rwt-GridRow", one class per state, and the custom
+     * variant of the item. Rows are recycled while scrolling, so the value is compared with the
+     * last one to keep the number of DOM writes down.
+     */
+    _renderCssClasses : function() {
+      var Widget = rwt.widgets.base.Widget;
+      var classes = [ "rwt-GridRow" ];
+      if( this.__states ) {
+        for( var state in this.__states ) {
+          classes.push( Widget.getCssStateClass( state ) );
+        }
+      }
+      var custom = this._lastAttributes[ "class" ];
+      if( custom ) {
+        classes.push( custom );
+      }
+      var value = classes.join( " " );
+      if( this._cssClasses !== value ) {
+        this._cssClasses = value;
+        this.$el.attr( "class", value );
+      }
+    },
+
+    _renderAriaAttributes : function() {
+      var item = this._item;
+      if( !item ) {
+        return;
+      }
+      var attributes = {
+        "role" : "row",
+        "aria-selected" : this._selected ? "true" : "false"
+      };
+      // Depth and expansion state only mean something in a tree, where the rows form a hierarchy.
+      if( this._gridConfig.baseAppearance !== "table" ) {
+        attributes[ "aria-level" ] = item.getLevel() + 1;
+        if( item.hasChildren() ) {
+          attributes[ "aria-expanded" ] = item.isExpanded() ? "true" : "false";
+        } else {
+          this.$el.removeAttr( "aria-expanded" );
+        }
+      }
+      this.$el.attr( attributes );
     },
 
     identify : function( node ) {
@@ -406,6 +456,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
           } else {
             this._renderCellBackground( cell );
           }
+          this._renderCellBoxStyle( cell );
           this._renderCellCheckBox( cell );
           this._renderCellImage( cell );
           this._renderCellLabel( cell );
@@ -502,17 +553,16 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
         element = this._getCellLabelElement( cell );
         this._renderCellLabelContent( cell, element );
         if( renderBounds ) {
-          var treeColumnAlignment = this._mirror ? "right" : "left";
-          var columnAlignment = this._getAlignment( cell, this._gridConfig );
-          if( this._gridConfig.baseAppearance === "grid" ) {
-            treeColumnAlignment = columnAlignment;
-          }
-          element.css( "textAlign", isTreeColumn ? treeColumnAlignment : columnAlignment );
+          element.css( "textAlign", this._getEffectiveAlignment( cell ) );
         }
         this._renderCellLabelFont( cell, element );
       } else if( this.$cellLabels[ cell ] ) {
         element = this._getCellLabelElement( cell );
         this._renderCellLabelContent( -1, element );
+      }
+      if( element ) {
+        // dopo il contenuto: renderContent sostituisce quello che c'e' dentro l'elemento
+        this._renderCellStyle( cell, element );
       }
       if( renderBounds ) {
         this._renderCellLabelBounds( cell );
@@ -671,20 +721,153 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
       }
     },
 
+    /**
+     * Applies the cell css declarations to an inner element that wraps the text.
+     *
+     * The element the client positions - the cell label - is not ours: _renderCellLabelBounds
+     * rewrites its left, top and width on every render, so anything geometric written on it is
+     * recomputed away. The inner element is never touched by the layout, so it can carry padding,
+     * a border, a radius and a background, and it sizes itself on its content: that is what makes
+     * a badge a badge instead of a coloured column.
+     *
+     * It is applied after the content, because renderContent replaces whatever is inside the
+     * label - so the wrapper has to be put back on every render.
+     */
+    /**
+     * Applies the cell box css declarations to an element of ours, stacked over the cell: the
+     * height of the row, the width of the column.
+     *
+     * The obvious candidate would have been the per cell background element, which already has
+     * exactly those bounds. Two things make it the wrong place, and both are silent:
+     *
+     * - the whole background family on that element belongs to rwt.html.Style, which keeps its own
+     *   bookkeeping of colour, gradient, image, position and repeat and rebuilds the background
+     *   shorthand from it whenever any of them changes. A background-image written there survives
+     *   until the next time the cell colour is rendered, and then disappears - which also rules
+     *   out expressing anything as a background, so a rule taking a fraction of the height, which
+     *   needs background-size, could not be drawn at all;
+     * - it sits at z-index 1 and the selection overlay at 2, so everything drawn on it is covered
+     *   as soon as the row is selected.
+     *
+     * This element instead is ours: it exists only for a cell that declares a box style, its
+     * inline style is rewritten whole on every render because nobody else writes on it, and it
+     * sits at z-index 3, over the selection overlay. It is created before the cell label, so the
+     * text still paints over it where the two meet, and pointer-events none keeps it out of hit
+     * testing - it covers the cell, and must not take its clicks.
+     */
+    _renderCellBoxStyle : function( cell ) {
+      var style = this._item ? this._item.getCellBoxStyle( cell ) : null;
+      if( !style ) {
+        this._removeNode( this.$cellBoxes, cell );
+        return;
+      }
+      var node = this._getCellBoxElement( cell ).get( 0 );
+      if( !node ) {
+        return;
+      }
+      var left = this._layout.cellLeft[ cell ];
+      node.style.cssText =   "position:absolute;overflow:hidden;pointer-events:none;z-index:3;"
+                           + "top:0;height:100%;width:" + this._layout.cellWidth[ cell ] + "px;"
+                           + ( this._mirror ? "right:" : "left:" ) + left + "px;"
+                           + style;
+    },
+
+    _getCellBoxElement : function( cell ) {
+      var result = this.$cellBoxes[ cell ];
+      if( !result ) {
+        result = this._createElement( 3 );
+        this.$cellBoxes[ cell ] = result;
+      }
+      return result;
+    },
+
+    _renderCellStyle : function( cell, element ) {
+      var node = element.get( 0 );
+      if( !node ) {
+        return;
+      }
+      var style = this._item ? this._item.getCellStyle( cell ) : null;
+      var wrapper = node.firstChild;
+      var isWrapper =    wrapper
+                      && wrapper.nodeType === 1
+                      && wrapper.getAttribute
+                      && wrapper.getAttribute( "data-rwt-cell" );
+      if( !style ) {
+        if( isWrapper ) {
+          // torna al rendering semplice: il testo rientra direttamente nell'etichetta
+          node.innerHTML = wrapper.innerHTML;
+        }
+        return;
+      }
+      if( !isWrapper ) {
+        wrapper = document.createElement( "span" );
+        wrapper.setAttribute( "data-rwt-cell", "1" );
+        wrapper.innerHTML = node.innerHTML;
+        node.innerHTML = "";
+        node.appendChild( wrapper );
+      }
+      /*
+       * inline-block perche' la scatola si stringa sul contenuto.
+       *
+       * max-width, overflow ed ellissi servono a non far tagliare la scatola: senza, un valore
+       * piu' largo della colonna sporge e l'overflow dell'etichetta ne mangia il bordo destro,
+       * cioe' si perde proprio il pezzo che rende la forma riconoscibile. Cosi' invece la scatola
+       * si ferma alla larghezza utile e a essere troncato e' il testo, dentro il bordo.
+       *
+       * Il box-sizing globale del client e' border-box, quindi max-width comprende bordo e
+       * padding: la scatola sta nella colonna per intero.
+       */
+      wrapper.style.cssText = "display:inline-block;white-space:nowrap;line-height:normal;"
+                            + "max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;"
+                            + style;
+    },
+
     _renderCellLabelBounds : function( cell ) {
       var element = this.$cellLabels[ cell ];
       if( element ) {
         var left = this._layout.cellTextLeft[ cell ];
         var width = this._layout.cellTextWidth[ cell ];
-        var top = this._layout.cellPadding[ 0 ];
-        // TODO : for vertical center rendering line-height should also be set,
-        //        but not otherwise. Also not sure about bottom alignment.
+        /*
+         * Centratura verticale, e vale per tutto cio' che sta su una riga: testo, pastiglie,
+         * qualunque contenuto.
+         *
+         * L'etichetta partiva dal padding alto della cella, che e' un numero calibrato su una riga
+         * di testo: qualunque contenuto piu' alto o piu' basso resta fuori asse, e in una riga
+         * cresciuta per il font di un'altra cella il testo finisce appiccicato in cima - misurato,
+         * 7px sopra e 51 sotto in una riga da 77.
+         *
+         * top al 50% piu' una traslazione di mezza altezza propria centra senza sapere quanto e'
+         * alto il contenuto: nessuna misura da fare - che su una griglia virtuale sarebbe una
+         * lettura di layout per cella - e nessun numero deciso in anticipo, quindi niente da
+         * ritarare quando cambia il corpo del testo.
+         *
+         * Ed e' la ragione per cui non si usa flex, che sarebbe il modo ovvio: un elemento flex
+         * perde text-overflow, e l'ellissi sparirebbe da ogni cella dell'applicazione. Restando un
+         * blocco, text-align continua a posizionare sia il testo sia una scatola inline-block,
+         * quindi l'allineamento dichiarato sulla colonna vale come sempre, forma compresa.
+         *
+         * Una colonna che va a capo resta ancorata in alto: centrare un blocco su tre righe
+         * disallineerebbe la prima riga dalle celle a riga singola accanto, ed e' quell'
+         * allineamento che rende leggibile un record.
+         */
+        if( !this._gridConfig.wordWrap[ cell ] ) {
+          element.css( {
+            "left" : this._mirror ? "" : left,
+            "right" : this._mirror ? left : "",
+            "top" : "50%",
+            "width" : width,
+            "height" : "auto",
+            "transform" : "translateY(-50%)"
+          } );
+          return;
+        }
         element.css( {
           "left" : this._mirror ? "" : left,
           "right" : this._mirror ? left : "",
-          "top" : top,
+          "top" : this._layout.cellPadding[ 0 ],
           "width" : width,
-          "height" : "auto"
+          "height" : "auto",
+          "transform" : ""
         } );
       }
     },
@@ -959,6 +1142,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
 
     _removeCell : function( cell ) {
       this._removeNode( this.$cellBackgrounds, cell );
+      this._removeNode( this.$cellBoxes, cell );
       this._removeNode( this.$cellImages, cell );
       this._removeNode( this.$cellCheckBoxes, cell );
       this._removeNode( this.$cellLabels, cell );
@@ -1082,6 +1266,20 @@ rwt.qx.Class.define( "rwt.widgets.base.GridRow", {
 
     ///////////////
     // Column Info
+
+    /**
+     * The alignment actually used for a cell, tree column included. Extracted because it is now
+     * needed twice: as text-align, and as justify-content for a cell whose content is a box - in a
+     * flex container text-align does not place the box, so without this the alignment declared on
+     * the column would silently stop working on styled cells.
+     */
+    _getEffectiveAlignment : function( cell ) {
+      var columnAlignment = this._getAlignment( cell, this._gridConfig );
+      if( !this._isTreeColumn( cell ) || this._gridConfig.baseAppearance === "grid" ) {
+        return columnAlignment;
+      }
+      return this._mirror ? "right" : "left";
+    },
 
     _getAlignment : function( column, gridConfig ) {
       var alignment = gridConfig.alignment[ column ] ? gridConfig.alignment[ column ] : "left";

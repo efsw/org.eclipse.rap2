@@ -542,6 +542,98 @@ public class TreeItem extends Item {
    *              thread that created the receiver</li>
    *              </ul>
    */
+  /**
+   * Sets a list of css declarations for the given cell, applied by the client to an inner element
+   * that wraps the cell text - so the declarations may change the shape of the value without
+   * fighting the layout of the cell, which the client positions itself.
+   * <p>
+   * The declarations travel verbatim and are applied one by one, so a declaration the browser does
+   * not understand is dropped without affecting the others. Passing <code>null</code> or an empty
+   * string removes the inner element and restores the plain rendering.
+   * </p>
+   *
+   * @param index the column index
+   * @param cellStyle the css declarations, e.g. <code>"padding:1px 6px;border-radius:3px"</code>
+   *          (or null)
+   * @since RAP fork: per cell styling
+   */
+  public void setCellStyle( int index, String cellStyle ) {
+    checkWidget();
+    int count = Math.max( 1, parent.getColumnCount() );
+    if( index >= 0 && index < count ) {
+      ensureData( index, count );
+      String value = cellStyle == null || cellStyle.isEmpty() ? null : cellStyle;
+      if( !equals( data[ index ].cellStyle, value ) ) {
+        data[ index ].cellStyle = value;
+        markCached();
+        parent.redraw();
+      }
+    }
+  }
+
+  /**
+   * Sets a list of css declarations for the box of the given cell - the full height of the row,
+   * over the width of the column - as opposed to {@link #setCellStyle(int, String)}, which styles
+   * an element wrapped around the cell text and therefore only as tall as the text.
+   * <p>
+   * Use this for anything that belongs to the cell rather than to its value: a coloured rule along
+   * one edge, an inset shadow, a hatch. The declarations are applied one by one on top of what the
+   * client renders itself on that box (the cell background colour, the vertical grid line), so
+   * declaring a property the client also writes will fight with it - the background and the border
+   * are best left alone.
+   * </p>
+   *
+   * @param index the column index
+   * @param cellBoxStyle the css declarations, e.g.
+   *          <code>"box-shadow:inset 3px 0 0 0 #c2362b"</code> (or null)
+   * @since RAP fork: per cell styling
+   */
+  public void setCellBoxStyle( int index, String cellBoxStyle ) {
+    checkWidget();
+    int count = Math.max( 1, parent.getColumnCount() );
+    if( index >= 0 && index < count ) {
+      ensureData( index, count );
+      String value = cellBoxStyle == null || cellBoxStyle.isEmpty() ? null : cellBoxStyle;
+      if( !equals( data[ index ].cellBoxStyle, value ) ) {
+        data[ index ].cellBoxStyle = value;
+        markCached();
+        parent.redraw();
+      }
+    }
+  }
+
+  /**
+   * Returns the css declarations set for the box of the given cell, or null.
+   *
+   * @param index the column index
+   * @see #setCellBoxStyle(int, String)
+   * @since RAP fork: per cell styling
+   */
+  public String getCellBoxStyle( int index ) {
+    checkWidget();
+    int count = Math.max( 1, parent.getColumnCount() );
+    if( index >= 0 && index < count && data != null && index < data.length && data[ index ] != null ) {
+      return data[ index ].cellBoxStyle;
+    }
+    return null;
+  }
+
+  /**
+   * Returns the css declarations set for the given cell, or null.
+   *
+   * @param index the column index
+   * @see #setCellStyle(int, String)
+   * @since RAP fork: per cell styling
+   */
+  public String getCellStyle( int index ) {
+    checkWidget();
+    int count = Math.max( 1, parent.getColumnCount() );
+    if( index >= 0 && index < count && data != null && index < data.length && data[ index ] != null ) {
+      return data[ index ].cellStyle;
+    }
+    return null;
+  }
+
   public void setBackground( int index, Color color ) {
     checkWidget();
     if( color != null && color.isDisposed() ) {
@@ -1752,6 +1844,42 @@ public class TreeItem extends Item {
     }
 
     @Override
+    public String[] getCellStyles() {
+      int columnCount = Math.max( 1, getParent().getColumnCount() );
+      String[] result = null;
+      if( data != null ) {
+        for( int i = 0; i < data.length; i++ ) {
+          String cellStyle = data[ i ] == null ? null : data[ i ].cellStyle;
+          if( cellStyle != null ) {
+            if( result == null ) {
+              result = new String[ columnCount ];
+            }
+            result[ i ] = cellStyle;
+          }
+        }
+      }
+      return result;
+    }
+
+    @Override
+    public String[] getCellBoxStyles() {
+      int columnCount = Math.max( 1, getParent().getColumnCount() );
+      String[] result = null;
+      if( data != null ) {
+        for( int i = 0; i < data.length; i++ ) {
+          String cellBoxStyle = data[ i ] == null ? null : data[ i ].cellBoxStyle;
+          if( cellBoxStyle != null ) {
+            if( result == null ) {
+              result = new String[ columnCount ];
+            }
+            result[ i ] = cellBoxStyle;
+          }
+        }
+      }
+      return result;
+    }
+
+    @Override
     public Color[] getCellForegrounds() {
       int columnCount = Math.max( 1, getParent().getColumnCount() );
       Color[] result = null;
@@ -1827,6 +1955,8 @@ public class TreeItem extends Item {
     Font font;
     Color background;
     Color foreground;
+    String cellStyle;
+    String cellBoxStyle;
   }
 
 }

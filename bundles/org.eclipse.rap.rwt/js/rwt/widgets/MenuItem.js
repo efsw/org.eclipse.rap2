@@ -48,6 +48,23 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
        rwt.widgets.util.RadioButtonUtil.registerExecute( this );
       break;
     }
+    switch( menuItemType ){
+      case "check":
+       this.setAriaRole( "menuitemcheckbox" );
+       this.setAriaSelectionAttribute( "aria-checked" );
+      break;
+      case "radio":
+       this.setAriaRole( "menuitemradio" );
+       this.setAriaSelectionAttribute( "aria-checked" );
+      break;
+      case "cascade":
+       this.setAriaRole( "menuitem" );
+       this.setAriaAttribute( "aria-haspopup", "menu" );
+       this.setAriaAttribute( "aria-expanded", "false" );
+      break;
+      default:
+       this.setAriaRole( "menuitem" );
+    }
     this._preferredCellWidths = [ 0, 0, 0, 0, 13 ];
     if( this._isSelectable ) {
       this.setCellContent( 0, "" );
@@ -191,6 +208,9 @@ rwt.qx.Class.define("rwt.widgets.MenuItem",  {
 
     setSubMenuOpen : function( bool ) {
       this._subMenuOpen = bool;
+      if( this.hasState( "cascade" ) ) {
+        this.setAriaAttribute( "aria-expanded", bool ? "true" : "false" );
+      }
     },
 
     setMenu : function( menu ) {

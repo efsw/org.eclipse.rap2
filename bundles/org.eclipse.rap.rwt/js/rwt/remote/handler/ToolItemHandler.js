@@ -47,6 +47,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.ToolItem", {
     "visible",
     "enabled",
     "customVariant",
+    "htmlAttributes",
     "toolTipMarkupEnabled",
     "toolTip",
     "text",
@@ -60,6 +61,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.ToolItem", {
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "bounds" : rwt.remote.HandlerUtil.getControlPropertyHandler( "bounds" ),
     "visible" : function( widget, value ) {

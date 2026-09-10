@@ -1032,6 +1032,34 @@ public class Tree extends Composite {
    *
    * @since 1.3
    */
+  /**
+   * Returns how much taller a row is than the text it holds, in pixels: the vertical cell padding
+   * plus what the widget adds around the text - the text margin and the pixel of the horizontal
+   * grid line, which is always reserved.
+   * <p>
+   * It is the term to add to a text height to obtain a row height, and it is what
+   * {@link #computeItemHeight()} adds itself. Callers that size rows from a font of their own -
+   * a bigger font in a cell, for instance - need it: without it the row is exactly as tall as its
+   * text and the rows end up touching.
+   * </p>
+   * <p>
+   * Asking for it beats deriving it from {@link #getItemHeight()}: that difference only holds
+   * while nobody has set a custom item height, and afterwards it silently eats itself.
+   * </p>
+   *
+   * @exception SWTException <ul>
+   *              <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *              <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
+   *              receiver</li>
+   *              </ul>
+   * @since RAP fork: row height from a cell font
+   */
+  public int getItemVerticalExtra() {
+    checkWidget();
+    BoxDimensions padding = getCellPadding();
+    return padding.top + padding.bottom + TEXT_MARGIN.height + 1;
+  }
+
   public int getItemHeight() {
     checkWidget();
     int result = customItemHeight;
@@ -2111,15 +2139,25 @@ public class Tree extends Composite {
   private int computeHeaderHeight() {
     int result = 0;
     if( headerVisible ) {
-      Font headerFont = getHeaderFont();
-      int textHeight = TextSizeUtil.getCharHeight( headerFont );
+      /*
+       * Senza colonne l'altezza e' quella del font del controllo. Con le colonne, invece, il font
+       * del controllo NON fa da altezza minima: farebbe da pavimento, e un'intestazione con un
+       * font piu' piccolo dei dati resterebbe alta come prima.
+       */
+      int textHeight = getColumnCount() == 0 ? TextSizeUtil.getCharHeight( getHeaderFont() ) : 0;
       int imageHeight = 0;
       for( int i = 0; i < getColumnCount(); i++ ) {
         TreeColumn column = columnHolder.getItem( i );
-        if( column.getText().contains( "\n" ) ) {
-          int columnTextHeight = TextSizeUtil.textExtent( headerFont, column.getText(), 0 ).y;
-          textHeight = Math.max( textHeight, columnTextHeight );
-        }
+        /*
+         * Il font di ogni colonna, non quello del controllo: l'intestazione e' alta quanto il piu'
+         * alto dei font delle sue colonne. Una colonna che non dichiara un font suo ripiega su
+         * quello del controllo, quindi il caso normale resta quello di prima.
+         */
+        Font columnFont = column.getHeaderFont();
+        int columnTextHeight = column.getText().contains( "\n" )
+                             ? TextSizeUtil.textExtent( columnFont, column.getText(), 0 ).y
+                             : TextSizeUtil.getCharHeight( columnFont );
+        textHeight = Math.max( textHeight, columnTextHeight );
         Image image = getColumn( i ).getImage();
         int height = image == null ? 0 : image.getBounds().height;
         if( height > imageHeight ) {

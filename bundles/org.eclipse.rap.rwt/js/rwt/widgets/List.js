@@ -18,6 +18,8 @@ rwt.qx.Class.define( "rwt.widgets.List", {
   construct : function( multiSelection ) {
     this.base( arguments, new rwt.widgets.base.VerticalBoxLayout() );
     this.setAppearance( "list" );
+    this.setAriaRole( "listbox" );
+    this.setAriaAttribute( "aria-multiselectable", multiSelection ? "true" : null );
     this.setScrollBarsVisible( false, false );
     this.setEnableElementFocus( false );
     this._manager = new rwt.widgets.util.SelectionManager( this._clientArea );

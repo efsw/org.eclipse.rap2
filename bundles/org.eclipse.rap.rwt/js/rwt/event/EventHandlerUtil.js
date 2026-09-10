@@ -236,16 +236,10 @@ rwt.event.EventHandlerUtil = {
     return hasKeyCode ? event.keyCode : 0;
   },
 
-  getCharCode : rwt.util.Variant.select( "qx.client", {
-    "default" : function( event ) {
-      var hasCharCode = event.type === "keypress" && event.keyCode !== 13 && event.keyCode !== 27;
-      return hasCharCode ? event.charCode : 0;
-    },
-    "trident" : function( event ) {
-      var hasCharCode = event.type === "keypress" && event.keyCode !== 13 && event.keyCode !== 27;
-      return hasCharCode ? event.keyCode : 0;
-    }
-  } ),
+  getCharCode : function( event ) {
+    var hasCharCode = event.type === "keypress" && event.keyCode !== 13 && event.keyCode !== 27;
+    return hasCharCode ? event.charCode : 0;
+  },
 
   isFirstKeyDown : function( keyCode ) {
     return this._lastUpDownType[ keyCode ] !== "keydown";

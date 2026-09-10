@@ -266,35 +266,9 @@ rwt.qx.Class.define( "rwt.remote.Connection", {
       }
     },
 
-    _isConnectionError : rwt.util.Variant.select( "qx.client", {
-      "trident" : function( statusCode ) {
-        // for a description of the IE status codes, see
-        // http://support.microsoft.com/kb/193625
-        // Some modern IEs use standard, but not all
-        return (    statusCode === 12007    // ERROR_INTERNET_NAME_NOT_RESOLVED
-                 || statusCode === 12029    // ERROR_INTERNET_CANNOT_CONNECT
-                 || statusCode === 12030    // ERROR_INTERNET_CONNECTION_ABORTED
-                 || statusCode === 12031    // ERROR_INTERNET_CONNECTION_RESET
-                 || statusCode === 12152    // ERROR_HTTP_INVALID_SERVER_RESPONSE
-                 || statusCode === 0 
-                 || statusCode === undefined );
-      },
-      "gecko" : function( statusCode ) {
-        // Firefox 3 reports other statusCode than oder versions (bug #249814)
-        var result;
-        // Check if Gecko > 1.9 is running (used in FF 3)
-        // Gecko/app integration overview: http://developer.mozilla.org/en/Gecko
-        if( Client.getMajor() * 10 + Client.getMinor() >= 19 ) {
-          result = ( statusCode === 0 || statusCode === undefined );
-        } else {
-          result = ( statusCode === -1 || statusCode === undefined );
-        }
-        return result;
-      },
-      "default" : function( statusCode ) {
-        return statusCode === 0 || statusCode === undefined ;
-      }
-    } ),
+    _isConnectionError : function( statusCode ) {
+      return statusCode === 0 || statusCode === undefined;
+    },
 
     _isJsonResponse : function( event ) {
       var contentType = event.responseHeaders[ "content-type" ];

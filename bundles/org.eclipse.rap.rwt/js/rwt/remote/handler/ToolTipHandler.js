@@ -35,6 +35,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.ToolTip", {
 
   properties : [
     "customVariant",
+    "htmlAttributes",
     "roundedBorder",
     "backgroundGradient",
     "autoHide",
@@ -46,6 +47,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.ToolTip", {
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "roundedBorder" : rwt.remote.HandlerUtil.getRoundedBorderHandler(),
     "backgroundGradient" : rwt.remote.HandlerUtil.getBackgroundGradientHandler(),
     "autoHide" : function( widget, value ) {

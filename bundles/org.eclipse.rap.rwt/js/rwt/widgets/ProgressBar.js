@@ -30,6 +30,8 @@ rwt.qx.Class.define( "rwt.widgets.ProgressBar", {
     this.setOverflow( "hidden" );
     this.setState( "normal" );
     this.setAppearance( "progressbar" );
+    this.setAriaRole( "progressbar" );
+    this._renderAriaValues();
   },
 
   destruct : function() {
@@ -80,20 +82,37 @@ rwt.qx.Class.define( "rwt.widgets.ProgressBar", {
     setMinimum : function( minimum ) {
       this._minimum = minimum;
       this.addToQueue( "indicatorSelection" );
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "minimumChanged" );
     },
 
     setMaximum : function( maximum ) {
       this._maximum = maximum;
       this.addToQueue( "indicatorSelection" );
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "maximumChanged" );
     },
 
     setSelection : function( selection ) {
       this._selection = selection;
       this.addToQueue( "indicatorSelection" );
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "selectionChanged", this );
       this.dispatchSimpleEvent( "updateToolTip", this );
+    },
+
+    _renderAriaValues : function() {
+      // An indeterminate progress bar carries no value: leaving the attributes out is what tells
+      // the screen reader that the progress is unknown.
+      if( this._indet ) {
+        this.setAriaAttribute( "aria-valuemin", null );
+        this.setAriaAttribute( "aria-valuemax", null );
+        this.setAriaAttribute( "aria-valuenow", null );
+      } else {
+        this.setAriaAttribute( "aria-valuemin", this._minimum );
+        this.setAriaAttribute( "aria-valuemax", this._maximum );
+        this.setAriaAttribute( "aria-valuenow", this._selection );
+      }
     },
 
     getMinimum : function() {

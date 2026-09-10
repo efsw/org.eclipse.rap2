@@ -17,6 +17,7 @@ rwt.qx.Class.define( "rwt.widgets.ToolBar", {
     this.base( arguments );
     this._hoverItem = null;
     this.setAppearance( "toolbar" );
+    this.setAriaRole( "toolbar" );
     this.setOverflow( "hidden" );
     this.initTabIndex();
     this.addEventListener( "focus", this._onFocus );

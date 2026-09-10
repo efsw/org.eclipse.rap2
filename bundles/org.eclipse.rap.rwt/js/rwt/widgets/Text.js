@@ -166,13 +166,6 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       if( this._isTextArea() ) {
         this._styleWrap();
       }
-      var client = rwt.client.Client;
-      if( client.isTrident() && client.getVersion() === 9 && this._isTextArea() ) {
-        // Bug 427828 - [Text] Loses focus on click in IE8
-        // Bug 422974 - [Text] Multi-Line Text with border-radius not focusable by mouse in IE9
-        var blank = rwt.remote.Connection.RESOURCE_PATH + "static/image/blank.gif";
-        rwt.html.Style.setBackgroundImage( this._inputElement, blank );
-      }
       // Fix for bug 306354
       this._inputElement.style.paddingRight = "1px";
       this._updateAllIcons();

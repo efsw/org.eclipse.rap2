@@ -16,6 +16,8 @@ rwt.qx.Class.define( "rwt.widgets.base.ScrollBar", {
 
   construct : function( horizontal ) {
     this.base( arguments, horizontal );
+    this.setAriaRole( "scrollbar" );
+    this._renderAriaValues();
     this._idealValue = 0;
     this._idealThumb = 10;
     this._lastDispatchedValue = 0;

@@ -49,6 +49,8 @@ public final class TreeItemLCA extends WidgetLCA<TreeItem> {
   static final String PROP_CELL_BACKGROUNDS = "cellBackgrounds";
   static final String PROP_CELL_FOREGROUNDS = "cellForegrounds";
   static final String PROP_CELL_FONTS = "cellFonts";
+  static final String PROP_CELL_STYLES = "cellStyles";
+  static final String PROP_CELL_BOX_STYLES = "cellBoxStyles";
   static final String PROP_EXPANDED = "expanded";
   static final String PROP_CHECKED = "checked";
   static final String PROP_GRAYED = "grayed";
@@ -70,6 +72,8 @@ public final class TreeItemLCA extends WidgetLCA<TreeItem> {
       preserveProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ) );
       preserveProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ) );
       preserveProperty( item, PROP_CELL_FONTS, getCellFonts( item ) );
+      preserveProperty( item, PROP_CELL_STYLES, getCellStyles( item ) );
+      preserveProperty( item, PROP_CELL_BOX_STYLES, getCellBoxStyles( item ) );
       preserveProperty( item, PROP_EXPANDED, item.getExpanded() );
       preserveProperty( item, PROP_CHECKED, item.getChecked() );
       preserveProperty( item, PROP_GRAYED, item.getGrayed() );
@@ -121,6 +125,8 @@ public final class TreeItemLCA extends WidgetLCA<TreeItem> {
     renderProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ), null );
     renderProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ), null );
     renderProperty( item, PROP_CELL_FONTS, getCellFonts( item ), null );
+    renderProperty( item, PROP_CELL_STYLES, getCellStyles( item ), null );
+    renderProperty( item, PROP_CELL_BOX_STYLES, getCellBoxStyles( item ), null );
     // tree out of sync: hack: modified to send always the value 
     renderProperty( item, PROP_EXPANDED, item.getExpanded(), !item.getExpanded() );
     renderProperty( item, PROP_CHECKED, item.getChecked(), false );
@@ -170,6 +176,14 @@ public final class TreeItemLCA extends WidgetLCA<TreeItem> {
 
   private static Image[] getImages( TreeItem item ) {
     return getTreeItemAdapter( item ).getImages();
+  }
+
+  private static String[] getCellStyles( TreeItem item ) {
+    return getTreeItemAdapter( item ).getCellStyles();
+  }
+
+  private static String[] getCellBoxStyles( TreeItem item ) {
+    return getTreeItemAdapter( item ).getCellBoxStyles();
   }
 
   private static Color getUserBackground( TreeItem item ) {

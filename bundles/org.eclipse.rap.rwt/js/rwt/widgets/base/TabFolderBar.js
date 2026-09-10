@@ -33,6 +33,7 @@ rwt.qx.Class.define("rwt.widgets.base.TabFolderBar",
 
     this.initZIndex();
     this.initHeight();
+    this.setAriaRole( "tablist" );
     this._manager = new rwt.widgets.util.RadioManager();
   },
 

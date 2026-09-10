@@ -37,9 +37,16 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridColumnGroup", {
     "expanded",
     "visibility",
     "customVariant",
+    "htmlAttributes",
     "headerWordWrap",
     "fixed"
   ],
+
+  propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    }
+  },
 
   events : [ "Expand", "Collapse" ]
 

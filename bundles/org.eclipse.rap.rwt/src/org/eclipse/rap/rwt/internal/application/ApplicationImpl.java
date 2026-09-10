@@ -138,6 +138,20 @@ public class ApplicationImpl implements Application {
   }
 
   @Override
+  public void addLinkedStyleSheet( String styleSheetLocation ) {
+    addLinkedStyleSheet( styleSheetLocation, new ResourceLoaderImpl( getClassLoader() ) );
+  }
+
+  @Override
+  public void addLinkedStyleSheet( String styleSheetLocation, ResourceLoader resourceLoader ) {
+    ParamCheck.notNull( styleSheetLocation, "styleSheetLocation" );
+    ParamCheck.notNull( resourceLoader, "resourceLoader" );
+
+    applicationContext.getResourceRegistry().add( styleSheetLocation, resourceLoader );
+    applicationContext.getStartupPage().addLinkedStyleSheet( styleSheetLocation );
+  }
+
+  @Override
   public void addThemeableWidget( Class<? extends Widget> widget ) {
     addThemeableWidget( widget, new ResourceLoaderImpl( widget.getClassLoader() ) );
   }

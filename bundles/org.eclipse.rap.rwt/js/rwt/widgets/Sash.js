@@ -35,6 +35,7 @@ rwt.qx.Class.define( "rwt.widgets.Sash", {
     rwt.html.Style.setBackgroundPosition( this._handle, "center center" );
     this._handle.setAppearance( "sash-handle" );
     this.add( this._handle );
+    this.setAriaRole( "separator" );
     this.initOrientation();
     this._bufferZIndex = null;
   },
@@ -180,6 +181,9 @@ rwt.qx.Class.define( "rwt.widgets.Sash", {
     _applyOrientation : function( value, old ) {
       this._removeStyle( old );
       this._setStyle( value );
+      // aria-orientation names the axis the separator runs along, which is the same axis the
+      // SWT style refers to: a horizontal sash is a horizontal bar, dragged vertically.
+      this.setAriaAttribute( "aria-orientation", value );
     },
 
     _setStyle : function( style ) {

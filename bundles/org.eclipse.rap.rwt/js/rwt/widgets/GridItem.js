@@ -63,6 +63,8 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
     delete this._images;
     delete this._font;
     delete this._cellFonts;
+    delete this._cellStyles;
+    delete this._cellBoxStyles;
     delete this._foreground;
     delete this._cellForegrounds;
     delete this._background;
@@ -132,6 +134,8 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
       delete this._cellBackgrounds;
       delete this._cellForegrounds;
       delete this._cellFonts;
+      delete this._cellStyles;
+      delete this._cellBoxStyles;
       delete this._columnSpans;
       delete this._variant;
     },
@@ -174,6 +178,34 @@ rwt.qx.Class.define( "rwt.widgets.GridItem", {
 
     setCellFonts : function( fonts ) {
       this._cellFonts = fonts;
+      this._update( "content" );
+    },
+
+    /**
+     * A list of css declarations per cell, applied by the row to an inner element that wraps the
+     * cell text. Null or empty means the plain rendering.
+     */
+    getCellStyle : function( column ) {
+      var result = this._cellStyles ? this._cellStyles[ column ] : null;
+      return typeof result === "string" && result !== "" ? result : null;
+    },
+
+    setCellStyles : function( styles ) {
+      this._cellStyles = styles;
+      this._update( "content" );
+    },
+
+    /**
+     * A list of css declarations per cell, applied by the row to the box of the cell - the full
+     * height of the row over the width of the column. Null or empty means no box styling.
+     */
+    getCellBoxStyle : function( column ) {
+      var result = this._cellBoxStyles ? this._cellBoxStyles[ column ] : null;
+      return typeof result === "string" && result !== "" ? result : null;
+    },
+
+    setCellBoxStyles : function( styles ) {
+      this._cellBoxStyles = styles;
       this._update( "content" );
     },
 

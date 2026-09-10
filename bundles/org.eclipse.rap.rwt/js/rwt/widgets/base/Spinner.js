@@ -120,6 +120,8 @@ rwt.qx.Class.define("rwt.widgets.base.Spinner",
     //   MANAGER
     // ************************************************************************
     this.setManager(new rwt.util.Range());
+    this.setAriaRole("spinbutton");
+    this._renderAriaValues();
     this.initWrap();
 
     // ************************************************************************
@@ -702,6 +704,20 @@ rwt.qx.Class.define("rwt.widgets.base.Spinner",
 
 
     /**
+     * Renders the value range of the spinner as ARIA attributes.
+     */
+    _renderAriaValues : function()
+    {
+      var manager = this.getManager();
+      if( manager ) {
+        this.setAriaAttribute( "aria-valuemin", manager.getMin() );
+        this.setAriaAttribute( "aria-valuemax", manager.getMax() );
+        this.setAriaAttribute( "aria-valuenow", manager.getValue() );
+      }
+    },
+
+
+    /**
      * Callback method for the "change" event.<br/>
      * Sets the value of the text field and enables/disables
      * the up-/down-buttons of the min-/max-value are reached
@@ -716,6 +732,7 @@ rwt.qx.Class.define("rwt.widgets.base.Spinner",
     {
       var vValue = this.getManager().getValue();
       this._textfield.setValue(String(vValue));
+      this._renderAriaValues();
 
       if (vValue == this.getMin() && !this.getWrap())
       {

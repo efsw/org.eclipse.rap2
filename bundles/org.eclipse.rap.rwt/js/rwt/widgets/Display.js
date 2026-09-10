@@ -54,6 +54,7 @@ rwt.widgets.Display.prototype = {
     this._appendColorDepth();
     this._appendInitialHistoryEvent();
     this._appendTimezoneOffset();
+    this._appendUserPreferences();
     this._appendStartupParameters();
     this._attachListener();
     this._connection.send();
@@ -143,6 +144,32 @@ rwt.widgets.Display.prototype = {
     rwt.remote.KeyEventSupport.getInstance(); // adds global KeyListener
     rwt.runtime.System.getInstance().addEventListener( "beforeunload", this._onBeforeUnload, this );
     rwt.runtime.System.getInstance().addEventListener( "unload", this._onUnload, this );
+    this._attachUserPreferenceListener();
+  },
+
+  /**
+   * Watches the display preferences the operating system exposes to the browser. A change of the
+   * color scheme also repaints the widgets: the theme resolves its default values through css
+   * custom properties, so a stylesheet with a prefers-color-scheme block has a new answer to give
+   * as soon as the query flips.
+   */
+  _attachUserPreferenceListener : function() {
+    if( typeof window.matchMedia === "undefined" ) {
+      return;
+    }
+    var that = this;
+    var onChange = function() {
+      that._appendUserPreferences();
+      rwt.theme.ThemeStore.getInstance().refresh();
+      that._connection.sendDelayed( 100 );
+    };
+    var queries = [ window.matchMedia( "(prefers-color-scheme: dark)" ),
+                    window.matchMedia( "(prefers-reduced-motion: reduce)" ) ];
+    for( var i = 0; i < queries.length; i++ ) {
+      if( queries[ i ].addEventListener ) {
+        queries[ i ].addEventListener( "change", onChange );
+      }
+    }
   },
 
   _onResize : function() {
@@ -197,23 +224,16 @@ rwt.widgets.Display.prototype = {
   ///////////////////
   // client to server
 
-  _sendShutdown : rwt.util.Variant.select( "qx.client", {
-    "gecko" : function() {
+  // A synchronous request on unload is ignored by browsers now, and sendBeacon is exactly the
+  // API for this: it is the way out for every engine, with the old request left as a fallback
+  // for a browser that somehow lacks it.
+  _sendShutdown : function() {
+    if( navigator.sendBeacon ) {
       this._connection.sendBeacon();
-    },
-    "trident" : function() {
-      if( navigator.sendBeacon ) {
-        this._connection.sendBeacon();
-      } else if( rwt.client.Client.getBrowser() === "explorer" ) {
-        this._connection.sendImmediate( false );
-      } else {
-        this._connection.sendImmediate( true );
-      }
-    },
-    "default" : function() {
+    } else {
       this._connection.sendImmediate( true );
     }
-  } ),
+  },
 
   _appendWindowSize : function() {
     this._bounds = [ 0, 0, window.innerWidth, window.innerHeight ];
@@ -254,6 +274,17 @@ rwt.widgets.Display.prototype = {
     var timezoneOffset = rwt.client.Client.getTimezoneOffset();
     var writer = this._connection.getMessageWriter();
     writer.appendSet( "rwt.client.ClientInfo", "timezoneOffset", timezoneOffset );
+  },
+
+  _appendUserPreferences : function() {
+    if( typeof window.matchMedia === "undefined" ) {
+      return;
+    }
+    var dark = window.matchMedia( "(prefers-color-scheme: dark)" ).matches;
+    var reducedMotion = window.matchMedia( "(prefers-reduced-motion: reduce)" ).matches;
+    var writer = this._connection.getMessageWriter();
+    writer.appendSet( "rwt.client.ClientInfo", "colorScheme", dark ? "dark" : "light" );
+    writer.appendSet( "rwt.client.ClientInfo", "reducedMotion", reducedMotion );
   },
 
   _appendStartupParameters : function() {

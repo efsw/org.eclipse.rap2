@@ -16,7 +16,12 @@ import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicatio
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.zip.CRC32;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.eclipse.rap.rwt.internal.theme.ThemePropertyAdapterRegistry.ThemePropertyAdapter;
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
@@ -24,6 +29,10 @@ import org.eclipse.rap.rwt.service.ApplicationContext;
 import org.eclipse.rap.rwt.service.ResourceLoader;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.w3c.dom.Element;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 
 public class CssImage implements CssValue, ThemeResource {
@@ -231,6 +240,9 @@ public class CssImage implements CssValue, ThemeResource {
     InputStream inputStream = loader.getResourceAsStream( path );
     if( inputStream != null ) {
       try {
+        if( isSvg( path ) ) {
+          return readSvgSize( inputStream );
+        }
         ImageData data = new ImageData( inputStream );
         return new Size( data.width, data.height );
       } finally {
@@ -238,6 +250,109 @@ public class CssImage implements CssValue, ThemeResource {
       }
     }
     return null;
+  }
+
+  private static boolean isSvg( String path ) {
+    return path != null && path.toLowerCase( Locale.ENGLISH ).endsWith( ".svg" );
+  }
+
+  /**
+   * Reads the intrinsic size of an SVG. The image readers of SWT only know raster formats, so an
+   * SVG used as a themed image would fail to load altogether; its size is however written in the
+   * document itself, either as width and height on the root element or, failing that, as the
+   * extent of the viewBox.
+   */
+  private static Size readSvgSize( InputStream inputStream ) throws IOException {
+    try {
+      DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      // Without this the local name of an element is null, and the root would never be recognized
+      factory.setNamespaceAware( true );
+      // An image is not a place from which to reach out to the network or the file system
+      factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", true );
+      factory.setFeature( "http://xml.org/sax/features/external-general-entities", false );
+      factory.setFeature( "http://xml.org/sax/features/external-parameter-entities", false );
+      factory.setXIncludeAware( false );
+      factory.setExpandEntityReferences( false );
+      DocumentBuilder builder = factory.newDocumentBuilder();
+      // The default handler prints the parse error to stderr; the caller is told by the exception
+      builder.setErrorHandler( new SilentErrorHandler() );
+      Element root = builder.parse( inputStream ).getDocumentElement();
+      if( root == null || !"svg".equals( root.getLocalName() ) ) {
+        return null;
+      }
+      int width = readSvgLength( root.getAttribute( "width" ) );
+      int height = readSvgLength( root.getAttribute( "height" ) );
+      if( width <= 0 || height <= 0 ) {
+        Size viewBox = readSvgViewBox( root.getAttribute( "viewBox" ) );
+        if( viewBox == null ) {
+          return null;
+        }
+        width = width > 0 ? width : viewBox.width;
+        height = height > 0 ? height : viewBox.height;
+      }
+      return new Size( width, height );
+    } catch( ParserConfigurationException | SAXException exception ) {
+      throw new IOException( "Failed to read SVG image", exception );
+    }
+  }
+
+  /**
+   * Reads a length written on the root element. Only an absolute length in pixels gives a size
+   * that means anything here: an SVG scaled in percent or in em has no intrinsic size, and the
+   * viewBox is asked instead.
+   */
+  private static int readSvgLength( String value ) {
+    if( value == null ) {
+      return 0;
+    }
+    String trimmed = value.trim();
+    if( trimmed.endsWith( "px" ) ) {
+      trimmed = trimmed.substring( 0, trimmed.length() - 2 ).trim();
+    }
+    try {
+      return ( int )Math.ceil( Double.parseDouble( trimmed ) );
+    } catch( NumberFormatException notALength ) {
+      return 0;
+    }
+  }
+
+  private static Size readSvgViewBox( String value ) {
+    if( value == null ) {
+      return null;
+    }
+    String[] parts = value.trim().split( "[\\s,]+" );
+    if( parts.length != 4 ) {
+      return null;
+    }
+    try {
+      int width = ( int )Math.ceil( Double.parseDouble( parts[ 2 ] ) );
+      int height = ( int )Math.ceil( Double.parseDouble( parts[ 3 ] ) );
+      return width > 0 && height > 0 ? new Size( width, height ) : null;
+    } catch( NumberFormatException notAViewBox ) {
+      return null;
+    }
+  }
+
+  /**
+   * Keeps the parser from printing to stderr: the caller learns of a broken image through the
+   * exception, and an image is not worth a stack trace in the log of the server.
+   */
+  private static final class SilentErrorHandler implements ErrorHandler {
+
+    @Override
+    public void warning( SAXParseException exception ) {
+    }
+
+    @Override
+    public void error( SAXParseException exception ) throws SAXException {
+      throw exception;
+    }
+
+    @Override
+    public void fatalError( SAXParseException exception ) throws SAXException {
+      throw exception;
+    }
+
   }
 
 }

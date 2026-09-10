@@ -34,6 +34,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.CTabItem", {
     "toolTipMarkupEnabled",
     "toolTip",
     "customVariant",
+    "htmlAttributes",
     "showing",
     "showClose",
     "badge",
@@ -41,6 +42,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.CTabItem", {
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "bounds" : function( widget, value ) {
       var bounds = value;

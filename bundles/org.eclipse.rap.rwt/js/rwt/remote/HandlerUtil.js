@@ -116,7 +116,8 @@ rwt.remote.HandlerUtil = {
     "activeKeys",
     "cancelKeys",
     "data",
-    "direction"
+    "direction",
+    "htmlAttributes"
   ],
 
   _controlPropertyHandler : {
@@ -136,6 +137,9 @@ rwt.remote.HandlerUtil = {
       var map = rwt.remote.HandlerUtil.getServerData( target );
       rwt.util.Objects.mergeWith( map, value );
       target.dispatchSimpleEvent( "dataChanged" );
+    },
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
     },
     "children" : function( widget, value ) {
       if( value !== null ) {

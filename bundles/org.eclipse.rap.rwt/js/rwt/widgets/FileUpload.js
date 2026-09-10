@@ -103,7 +103,7 @@ rwt.qx.Class.define( "rwt.widgets.FileUpload", {
       this._inputElement.setAttribute( "type", "file" );
       this._inputElement.setAttribute( "name", "file" );
       this._inputElement.setAttribute( "size", "1" );
-      this._inputElement.setAttribute( "title", rwt.client.Client.isTrident() ? "" : " " );
+      this._inputElement.setAttribute( "title", " " );
       if( this._multi ) {
         this._inputElement.setAttribute( "multiple", "multiple" );
       }

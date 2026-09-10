@@ -38,6 +38,7 @@ public abstract class WidgetLCA<T extends Widget>  {
       renderInitialization( widget );
     }
     renderChanges( widget );
+    WidgetLCAUtil.renderHtmlAttributes( widget );
     adapter.setInitialized( true );
   }
 

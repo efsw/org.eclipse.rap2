@@ -55,27 +55,12 @@ rwt.qx.Class.define( "rwt.html.Border", {
     _EDGEWIDTH : [ "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth" ],
     _EDGECOLOR : [ "borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor" ],
     _EDGESTYLE : [ "borderTopStyle", "borderRightStyle", "borderBottomStyle", "borderLeftStyle" ],
-    _EDGEMOZCOLORS : [
-      "MozBorderTopColors",
-      "MozBorderRightColors",
-      "MozBorderBottomColors",
-      "MozBorderLeftColors"
+    _BORDERRADII : [
+      "borderTopLeftRadius",
+      "borderTopRightRadius",
+      "borderBottomRightRadius",
+      "borderBottomLeftRadius"
     ],
-    _BORDERRADII : rwt.util.Variant.select( "qx.client", {
-      "webkit|blink" : [
-        "-webkit-border-top-left-radius",
-        "-webkit-border-top-right-radius",
-        "-webkit-border-bottom-right-radius",
-        "-webkit-border-bottom-left-radius"
-      ],
-      "gecko|trident" : [
-        "borderTopLeftRadius",
-        "borderTopRightRadius",
-        "borderBottomRightRadius",
-        "borderBottomLeftRadius"
-      ],
-      "default" : []
-    } ),
 
 
     resetWidget : function( widget ) {
@@ -97,26 +82,17 @@ rwt.qx.Class.define( "rwt.html.Border", {
       }
     },
 
-    _resetComplexBorder : rwt.util.Variant.select("qx.client", {
-      "gecko" : function( widget ) {
-        var statics = rwt.html.Border;
-        var style = widget._style;
+    _resetComplexBorder : function( widget ) {
+      var statics = rwt.html.Border;
+      var inner = widget._innerStyle;
+      if( inner ) {
         for( var i = 0; i < 4; i++ ) {
-          style[ statics._EDGEMOZCOLORS[ i ] ] = "";
-        }
-      },
-      "default" : function( widget ) {
-        var statics = rwt.html.Border;
-        var inner = widget._innerStyle;
-        if( inner ) {
-          for( var i = 0; i < 4; i++ ) {
-            inner[ statics._EDGEWIDTH[ i ] ] = "";
-            inner[ statics._EDGESTYLE[ i ] ] = "";
-            inner[ statics._EDGECOLOR[ i ] ] = "";
-          }
+          inner[ statics._EDGEWIDTH[ i ] ] = "";
+          inner[ statics._EDGESTYLE[ i ] ] = "";
+          inner[ statics._EDGECOLOR[ i ] ] = "";
         }
       }
-    } )
+    }
 
   },
 
@@ -285,53 +261,38 @@ rwt.qx.Class.define( "rwt.html.Border", {
       }
     },
 
-    _renderComplexBorder : rwt.util.Variant.select( "qx.client", {
-      "gecko" : function( widget ) {
-        var statics = rwt.html.Border;
-        statics._resetRadii( widget );
-        var style = widget._style;
-        for( var i = 0; i < 4; i++ ) {
-          style[ statics._EDGEWIDTH[ i ] ] = ( this._widths[ i ] || 0 ) + "px";
-          style[ statics._EDGECOLOR[ i ] ] = this._colors[ i ] || "";
-          if( this._widths[ i ] === 2 ) {
-            style[ statics._EDGESTYLE[ i ] ] = "solid";
-            style[ statics._EDGEMOZCOLORS[ i ] ] = this._colors[ i ] + " " + this._innerColors[ i ];
-          } else {
-            style[ statics._EDGESTYLE[ i ] ] = this._styles[ i ] || "none";
-            style[ statics._EDGEMOZCOLORS[ i ] ] = "";
+    // Firefox used to draw the two-tone "complex" border with -moz-border-*-colors, which it
+    // removed in version 97; the nested element below is the one implementation left, and the
+    // one that still works there.
+    _renderComplexBorder : function( widget ) {
+      var statics = rwt.html.Border;
+      statics._resetRadii( widget );
+      var outer = widget._style;
+      var inner = widget._innerStyle;
+      for( var i = 0; i < 4; i++ ) {
+        if( this._widths[ i ] === 2 ) {
+          if( !inner ) {
+            widget.prepareEnhancedBorder();
+            inner = widget._innerStyle;
           }
-        }
-      },
-      "default" : function( widget ) {
-        var statics = rwt.html.Border;
-        statics._resetRadii( widget );
-        var outer = widget._style;
-        var inner = widget._innerStyle;
-        for( var i = 0; i < 4; i++ ) {
-          if( this._widths[ i ] === 2 ) {
-            if( !inner ) {
-              widget.prepareEnhancedBorder();
-              inner = widget._innerStyle;
-            }
-            outer[ statics._EDGEWIDTH[ i ] ] = "1px";
-            outer[ statics._EDGESTYLE[ i ] ] = "solid";
-            outer[ statics._EDGECOLOR[ i ] ] = this._colors[ i ] || "";
-            inner[ statics._EDGEWIDTH[ i ] ] = "1px";
-            inner[ statics._EDGESTYLE[ i ] ] = "solid";
-            inner[ statics._EDGECOLOR[ i ] ] = this._innerColors[ i ];
-          } else {
-            outer[ statics._EDGEWIDTH[ i ] ] = ( this._widths[ i ] || 0 ) + "px";
-            outer[ statics._EDGESTYLE[ i ] ] = this._styles[ i ] || "none";
-            outer[ statics._EDGECOLOR[ i ] ] = this._colors[ i ] || "";
-            if( inner ) {
-              inner[ statics._EDGEWIDTH[ i ] ] = "";
-              inner[ statics._EDGESTYLE[ i ] ] = "";
-              inner[ statics._EDGECOLOR[ i ] ] = "";
-            }
+          outer[ statics._EDGEWIDTH[ i ] ] = "1px";
+          outer[ statics._EDGESTYLE[ i ] ] = "solid";
+          outer[ statics._EDGECOLOR[ i ] ] = this._colors[ i ] || "";
+          inner[ statics._EDGEWIDTH[ i ] ] = "1px";
+          inner[ statics._EDGESTYLE[ i ] ] = "solid";
+          inner[ statics._EDGECOLOR[ i ] ] = this._innerColors[ i ];
+        } else {
+          outer[ statics._EDGEWIDTH[ i ] ] = ( this._widths[ i ] || 0 ) + "px";
+          outer[ statics._EDGESTYLE[ i ] ] = this._styles[ i ] || "none";
+          outer[ statics._EDGECOLOR[ i ] ] = this._colors[ i ] || "";
+          if( inner ) {
+            inner[ statics._EDGEWIDTH[ i ] ] = "";
+            inner[ statics._EDGESTYLE[ i ] ] = "";
+            inner[ statics._EDGECOLOR[ i ] ] = "";
           }
         }
       }
-    } ),
+    },
 
     _renderRoundedBorder : function( widget ) {
       this._renderSimpleBorder( widget );

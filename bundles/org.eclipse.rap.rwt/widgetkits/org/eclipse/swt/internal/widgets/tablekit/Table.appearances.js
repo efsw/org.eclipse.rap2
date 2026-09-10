@@ -44,7 +44,9 @@ var appearances = {
       var borderColors = [ null, null, null, null ];
       var borderWidths = [ 0, 0, 0, 0 ];
       var borderStyles = [ "solid", "solid", "solid", "solid" ];
-      if( !states.dummy ) {
+      // "boxed": l'intestazione ha una scatola sua, e le righe della fascia le farebbero da
+      // contorno doppio - vedi GridHeader._renderHeaderLabel
+      if( !states.dummy && !states.boxed ) {
         var gridLineStates = rwt.util.Objects.copy( states );
         gridLineStates[ "vertical" ] = true;
         gridLineStates[ "header" ] = true;
@@ -58,10 +60,12 @@ var appearances = {
           borderWidths[ states.rwt_RIGHT_TO_LEFT ? 1 : 3 ] = 1;
         }
       }
-      var borderBottom = tv.getCssBorder( "TableColumn", "border-bottom" );
-      borderWidths[ 2 ] = borderBottom.getWidthBottom();
-      borderStyles[ 2 ] = borderBottom.getStyleBottom();
-      borderColors[ 2 ] = borderBottom.getColorBottom();
+      if( !states.boxed ) {
+        var borderBottom = tv.getCssBorder( "TableColumn", "border-bottom" );
+        borderWidths[ 2 ] = borderBottom.getWidthBottom();
+        borderStyles[ 2 ] = borderBottom.getStyleBottom();
+        borderColors[ 2 ] = borderBottom.getColorBottom();
+      }
       result.border = new rwt.html.Border( borderWidths, borderStyles, borderColors );
       result.textShadow = tv.getCssShadow( "TableColumn", "text-shadow" );
       result.textOverflow = tv.getCssIdentifier( "TableColumn", "text-overflow" );

@@ -190,7 +190,8 @@ rwt.qx.Class.define( "rwt.animation.Animation", {
     _loop : function( time ) {
       if( this._startOn === null ) {
         this._startOn = new Date().getTime();
-        this._finishOn = this._startOn + ( this._duration );
+        var duration = rwt.animation.Animation.isMotionReduced() ? 0 : this._duration;
+        this._finishOn = this._startOn + duration;
         this._totalTime = this._duration;
       }
       if ( time >= this._finishOn ) {
@@ -227,6 +228,30 @@ rwt.qx.Class.define( "rwt.animation.Animation", {
   },
 
   statics : {
+
+    _motionReduced : null,
+
+    /**
+     * Tells whether the user has asked their system to reduce motion. An animation is then given
+     * a duration of zero, which lands it on its final frame at once: everything that listens for
+     * it still runs, only the movement is gone.
+     */
+    isMotionReduced : function() {
+      if( rwt.animation.Animation._motionReduced === null ) {
+        rwt.animation.Animation._motionReduced = false;
+        if( typeof window.matchMedia !== "undefined" ) {
+          var query = window.matchMedia( "(prefers-reduced-motion: reduce)" );
+          rwt.animation.Animation._motionReduced = query.matches;
+          if( query.addEventListener ) {
+            query.addEventListener( "change", function( event ) {
+              rwt.animation.Animation._motionReduced = event.matches;
+            } );
+          }
+        }
+      }
+      return rwt.animation.Animation._motionReduced;
+    },
+
 
     ///////////////
     // Global Queue

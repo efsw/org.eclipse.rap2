@@ -46,4 +46,32 @@ public interface ClientInfo extends ClientService {
    */
   public Locale[] getLocales();
 
+  /**
+   * Returns the color scheme the client prefers, as reported by the
+   * <code>prefers-color-scheme</code> media query: <code>"dark"</code> when the user has asked
+   * their system for a dark appearance, <code>"light"</code> otherwise. The value follows a change
+   * made while the application is running.
+   * <p>
+   * A theme does not need this to offer a dark variant - a stylesheet with a
+   * <code>&#64;media (prefers-color-scheme: dark)</code> block that redefines the
+   * <code>--rwt-*</code> custom properties is enough, and takes effect without the server being
+   * involved. This is for the decisions the application itself has to make, like which image to
+   * load.
+   * </p>
+   *
+   * @return <code>"dark"</code> or <code>"light"</code>, never <code>null</code>
+   * @since 4.1
+   */
+  public String getColorScheme();
+
+  /**
+   * Tells whether the user has asked their system to reduce motion, as reported by the
+   * <code>prefers-reduced-motion</code> media query. An application that animates should honour
+   * it, and so should a theme, through the matching media query.
+   *
+   * @return <code>true</code> if the client asked for reduced motion
+   * @since 4.1
+   */
+  public boolean isReducedMotion();
+
 }

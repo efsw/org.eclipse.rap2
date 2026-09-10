@@ -26,6 +26,8 @@ rwt.qx.Class.define( "rwt.widgets.TabItem", {
 
   construct : function() {
     this.base( arguments, [ "image", "label" ] );
+    this.setAriaRole( "tab" );
+    this.setAriaAttribute( "aria-selected", "false" );
     this.initChecked();
     this.initTabIndex();
     this._rawText = null;
@@ -247,6 +249,7 @@ rwt.qx.Class.define( "rwt.widgets.TabItem", {
         }
       }
       this.toggleState( "checked", value );
+      this.setAriaAttribute( "aria-selected", value ? "true" : "false" );
       var vPage = this.getPage();
       if( vPage ) {
         if( this.getChecked() ) {

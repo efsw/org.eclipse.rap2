@@ -43,6 +43,8 @@ public final class TableColumnLCA extends WidgetLCA<TableColumn> {
   static final String PROP_MOVEABLE = "moveable";
   static final String PROP_ALIGNMENT = "alignment";
   static final String PROP_FIXED = "fixed";
+  static final String PROP_BACKGROUND = "background";
+  static final String PROP_FOREGROUND = "foreground";
 
   private static final int ZERO = 0;
   private static final String DEFAULT_ALIGNMENT = "left";
@@ -59,6 +61,8 @@ public final class TableColumnLCA extends WidgetLCA<TableColumn> {
     preserveProperty( column, PROP_MOVEABLE, column.getMoveable() );
     preserveProperty( column, PROP_ALIGNMENT, getAlignment( column ) );
     preserveProperty( column, PROP_FIXED, isFixed( column ) );
+    preserveProperty( column, PROP_BACKGROUND, column.getBackground() );
+    preserveProperty( column, PROP_FOREGROUND, column.getForeground() );
   }
 
   @Override
@@ -81,6 +85,8 @@ public final class TableColumnLCA extends WidgetLCA<TableColumn> {
     renderProperty( column, PROP_MOVEABLE, column.getMoveable(), false );
     renderProperty( column, PROP_ALIGNMENT, getAlignment( column ), DEFAULT_ALIGNMENT );
     renderProperty( column, PROP_FIXED, isFixed( column ), false );
+    renderProperty( column, PROP_BACKGROUND, column.getBackground(), null );
+    renderProperty( column, PROP_FOREGROUND, column.getForeground(), null );
     renderListenSelection( column );
   }
 
@@ -107,6 +113,12 @@ public final class TableColumnLCA extends WidgetLCA<TableColumn> {
   }
 
   private static Font getFont( TableColumn column ) {
+    // il font della colonna se ne ha uno, altrimenti quello del controllo: il client applica
+    // quello che riceve, quindi qui basta scegliere
+    Font font = column.getFont();
+    if( font != null ) {
+      return font;
+    }
     Table table = column.getParent();
     IControlAdapter adapter = table.getAdapter( IControlAdapter.class );
     return adapter.getUserFont();

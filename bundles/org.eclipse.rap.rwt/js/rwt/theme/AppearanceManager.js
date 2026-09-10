@@ -41,6 +41,17 @@ rwt.qx.Class.define( "rwt.theme.AppearanceManager", {
       return this._currentTheme;
     },
 
+    /**
+     * Throws away the compiled appearances, so that the next request recomputes them from the
+     * theme values. Needed when those values may have changed without the theme itself changing,
+     * which is the case when a stylesheet redefines the css custom properties of the theme.
+     */
+    clearCache : function() {
+      if( this._currentTheme ) {
+        this.__cache[ this._currentTheme.name ] = {};
+      }
+    },
+
     syncAppearanceTheme : function() {
       if( !this._currentTheme ) {
         return;

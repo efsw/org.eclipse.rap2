@@ -51,6 +51,8 @@ rwt.qx.Class.define( "rwt.widgets.Scale", {
     this.addEventListener( "keypress", this._onKeyPress, this );
     this.addEventListener( "mousewheel", this._onMouseWheel, this );
     this.setAppearance( "scale" );
+    this.setAriaRole( "slider" );
+    this._renderAriaValues();
   },
 
   destruct : function() {
@@ -313,6 +315,7 @@ rwt.qx.Class.define( "rwt.widgets.Scale", {
     setSelection : function( value ) {
       this._selection = this._normalizeSelection( value );
       this._updateThumbPosition();
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "selectionChanged" );
     },
 
@@ -320,6 +323,7 @@ rwt.qx.Class.define( "rwt.widgets.Scale", {
       this._minimum = value;
       this._updateStep();
       this._updateThumbPosition();
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "minimumChanged" );
     },
 
@@ -327,7 +331,15 @@ rwt.qx.Class.define( "rwt.widgets.Scale", {
       this._maximum = value;
       this._updateStep();
       this._updateThumbPosition();
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "maximumChanged" );
+    },
+
+    _renderAriaValues : function() {
+      this.setAriaAttribute( "aria-orientation", this._horizontal ? "horizontal" : "vertical" );
+      this.setAriaAttribute( "aria-valuemin", this._minimum );
+      this.setAriaAttribute( "aria-valuemax", this._maximum );
+      this.setAriaAttribute( "aria-valuenow", this._selection );
     },
 
     setIncrement : function( value ) {

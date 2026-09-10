@@ -4,9 +4,12 @@
     <title>${title}</title>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" >
-    <!-- IE9 render in standard mode, all older versions in quirksmode -->
-    <meta http-equiv="X-UA-Compatible" content="IE=9,10,11;" >
+    <!-- No maximum-scale: pinch to zoom is how a page is read on a small screen, and taking it
+         away is a barrier for anyone who needs to enlarge the text -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" >
+    <!-- Lets the browser draw its own parts - form controls, scrollbars, the canvas behind the
+         page - in the same appearance the theme is using -->
+    <meta name="color-scheme" content="light dark" >
     ${headers}
     <!-- Default presentation for supported markup elements -->
     <style type="text/css">
@@ -40,15 +43,8 @@
       .rwt-cell-selectable {
         cursor: pointer;
       }
-      /* does (currently) not work in IE7/8: */
       .rwt-cell-selectable:hover {
         text-decoration: underline;
-      }
-    </style>
-    <!-- IE 10 specific styles -->
-    <style type="text/css">
-      input::-ms-clear, input::-ms-reveal {
-        display: none;
       }
     </style>
     <!-- Hide native scrollbars -->
@@ -76,12 +72,17 @@ ${body}
 
 ${libraries}
 
+    <div id="rwt-unsupported" hidden>
+      <p style="z-index:100000;background-color:white">
+        ${noScriptMessage}
+      </p>
+    </div>
+
     <script type="text/javascript" nonce="${nonceValue}">
       if( rwt.runtime.System.getInstance().isSupported() ) {
         ${appScript}
       } else {
-        var msg='<p style="z-index:100000;background-color:white">' + "${noScriptMessage}" + '</p>';
-        document.write( msg );
+        document.getElementById( "rwt-unsupported" ).hidden = false;
       }
     </script>
   </body>

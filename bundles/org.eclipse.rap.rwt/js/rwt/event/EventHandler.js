@@ -60,6 +60,7 @@ rwt.event.EventHandler = {
     window.addEventListener( "blur", this.__onwindowblur, false );
     window.addEventListener( "focus", this.__onwindowfocus, false  );
     window.addEventListener( "resize", this.__onwindowresize, false  );
+    this._attachResizeObserver();
     document.body.onselect = this.__onselectevent;
     document.onselectstart = this.__onselectevent;
     document.onselectionchange = this.__onselectevent;
@@ -72,6 +73,7 @@ rwt.event.EventHandler = {
     window.removeEventListener( "blur", this.__onwindowblur, false );
     window.removeEventListener( "focus", this.__onwindowfocus, false );
     window.removeEventListener( "resize", this.__onwindowresize, false );
+    this._detachResizeObserver();
     document.body.onselect = null;
     document.onselectstart = null;
     document.onselectionchange = null;
@@ -504,6 +506,27 @@ rwt.event.EventHandler = {
       rwt.widgets.base.ClientDocument.getInstance().createDispatchEvent( "windowfocus" );
     } catch( ex ) {
       rwt.runtime.ErrorHandler.processJavaScriptError( ex );
+    }
+  },
+
+  /**
+   * The resize event of the window misses the case where the document is resized without the
+   * window changing size - a RAP application embedded in a page whose layout moves, the devtools
+   * being docked, a zoom change on some browsers. A ResizeObserver on the root element sees all
+   * of them, and _onwindowresize drops the event when the size turns out to be the same anyway.
+   */
+  _attachResizeObserver : function() {
+    if( this.__resizeObserver || typeof window.ResizeObserver === "undefined" ) {
+      return;
+    }
+    this.__resizeObserver = new window.ResizeObserver( this.__onwindowresize );
+    this.__resizeObserver.observe( document.documentElement );
+  },
+
+  _detachResizeObserver : function() {
+    if( this.__resizeObserver ) {
+      this.__resizeObserver.disconnect();
+      this.__resizeObserver = null;
     }
   },
 

@@ -1961,6 +1961,34 @@ public class Table extends Composite {
    *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
    * </ul>
    */
+  /**
+   * Returns how much taller a row is than the text it holds, in pixels: the vertical cell padding.
+   * <p>
+   * It is the term to add to a text height to obtain a row height, and it is what
+   * {@link #getItemHeight()} adds itself. Callers that size rows from a font of their own - a
+   * bigger font in a cell, for instance - need it: without it the row is exactly as tall as its
+   * text and the rows end up touching.
+   * </p>
+   * <p>
+   * Asking for it beats deriving it from {@link #getItemHeight()}: that difference only holds
+   * while nobody has set a custom item height, and afterwards it silently eats itself. Note that a
+   * table adds less than a tree around the text - no text margin, no grid line pixel - so the two
+   * answers differ by design.
+   * </p>
+   *
+   * @exception SWTException <ul>
+   *              <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *              <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the
+   *              receiver</li>
+   *              </ul>
+   * @since RAP fork: row height from a cell font
+   */
+  public int getItemVerticalExtra() {
+    checkWidget();
+    BoxDimensions padding = getCellPadding();
+    return padding.top + padding.bottom;
+  }
+
   public int getItemHeight() {
     checkWidget();
     int result = customItemHeight;
@@ -1990,15 +2018,25 @@ public class Table extends Composite {
     checkWidget();
     int result = 0;
     if( headerVisible ) {
-      Font headerFont = getHeaderFont();
-      int textHeight = TextSizeUtil.getCharHeight( headerFont );
+      /*
+       * Senza colonne l'altezza e' quella del font del controllo. Con le colonne, invece, il font
+       * del controllo NON fa da altezza minima: farebbe da pavimento, e un'intestazione con un
+       * font piu' piccolo dei dati resterebbe alta come prima.
+       */
+      int textHeight = columnHolder.size() == 0 ? TextSizeUtil.getCharHeight( getHeaderFont() ) : 0;
       int imageHeight = 0;
       for( int i = 0; i < columnHolder.size(); i++ ) {
         TableColumn column = columnHolder.getItem( i );
-        if( column.getText().contains( "\n" ) ) {
-          int columnTextHeight = TextSizeUtil.textExtent( headerFont, column.getText(), 0 ).y;
-          textHeight = Math.max( textHeight, columnTextHeight );
-        }
+        /*
+         * Il font di ogni colonna, non quello del controllo: l'intestazione e' alta quanto il piu'
+         * alto dei font delle sue colonne. Una colonna che non dichiara un font suo ripiega su
+         * quello del controllo, quindi il caso normale resta quello di prima.
+         */
+        Font columnFont = column.getHeaderFont();
+        int columnTextHeight = column.getText().contains( "\n" )
+                             ? TextSizeUtil.textExtent( columnFont, column.getText(), 0 ).y
+                             : TextSizeUtil.getCharHeight( columnFont );
+        textHeight = Math.max( textHeight, columnTextHeight );
         Image image = column.getImage();
         int height = image == null ? 0 : image.getBounds().height;
         if( height > imageHeight ) {

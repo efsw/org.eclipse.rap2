@@ -28,6 +28,8 @@ import static org.eclipse.swt.internal.widgets.MarkupUtil.isToolTipMarkupEnabled
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.eclipse.rap.json.JsonArray;
 import org.eclipse.rap.json.JsonObject;
@@ -69,6 +71,7 @@ public final class WidgetLCAUtil {
   private static final String PROP_ENABLED = "enabled";
   private static final String PROP_DATA = "data";
   private static final String PROP_VARIANT = "customVariant";
+  private static final String PROP_HTML_ATTRIBUTES = "htmlAttributes";
   private static final String PROP_HELP_LISTENER = "Help";
   private static final String PROP_SELECTION_LISTENER = "Selection";
   private static final String PROP_DEFAULT_SELECTION_LISTENER = "DefaultSelection";
@@ -174,6 +177,38 @@ public final class WidgetLCAUtil {
       if( changed( widget, actual, preserved, null ) ) {
         getRemoteObject( widget ).set( PROP_VARIANT, actual == null ? null : "variant_" + actual );
       }
+    }
+  }
+
+  /**
+   * Sets an HTML attribute to be rendered on the element of the given widget. A
+   * <code>null</code> value removes a previously set attribute.
+   */
+  public static void setHtmlAttribute( Widget widget, String name, String value ) {
+    getRemoteAdapter( widget ).setHtmlAttribute( name, value );
+  }
+
+  /**
+   * Returns the HTML attributes set for the given widget, never <code>null</code>.
+   */
+  public static Map<String, String> getHtmlAttributes( Widget widget ) {
+    return getRemoteAdapter( widget ).getHtmlAttributes();
+  }
+
+  /**
+   * Renders the HTML attributes of the given widget, if they have changed since the last
+   * rendering. Called for every widget by {@link WidgetLCA#render(Widget)}, so that the
+   * individual LCAs don't have to.
+   */
+  public static void renderHtmlAttributes( Widget widget ) {
+    WidgetRemoteAdapter remoteAdapter = getRemoteAdapter( widget );
+    if( remoteAdapter.hasHtmlAttributesChanged() ) {
+      JsonObject attributes = new JsonObject();
+      for( Entry<String, String> entry : remoteAdapter.getHtmlAttributes().entrySet() ) {
+        attributes.add( entry.getKey(), entry.getValue() );
+      }
+      getRemoteObject( widget ).set( PROP_HTML_ATTRIBUTES, attributes );
+      remoteAdapter.clearHtmlAttributesChanged();
     }
   }
 

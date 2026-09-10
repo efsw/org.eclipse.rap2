@@ -26,6 +26,8 @@ rwt.qx.Class.define( "rwt.widgets.CTabItem", {
     this.setHorizontalChildrenAlign( rwt.widgets.util.Layout.ALIGN_LEFT );
     this.setOverflow( "hidden" );
     this.setTabIndex( null );
+    this.setAriaRole( "tab" );
+    this.setAriaSelectionAttribute( "aria-selected" );
     this._selected = false;
     this._showClose = false;
     this._rawText = null;

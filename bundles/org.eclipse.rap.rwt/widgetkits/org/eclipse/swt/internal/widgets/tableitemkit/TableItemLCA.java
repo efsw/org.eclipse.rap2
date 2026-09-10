@@ -51,6 +51,8 @@ public final class TableItemLCA extends WidgetLCA<TableItem> {
   static final String PROP_CELL_BACKGROUNDS = "cellBackgrounds";
   static final String PROP_CELL_FOREGROUNDS = "cellForegrounds";
   static final String PROP_CELL_FONTS = "cellFonts";
+  static final String PROP_CELL_STYLES = "cellStyles";
+  static final String PROP_CELL_BOX_STYLES = "cellBoxStyles";
   static final String PROP_CHECKED = "checked";
   static final String PROP_GRAYED = "grayed";
   static final String PROP_CACHED = "cached";
@@ -68,6 +70,8 @@ public final class TableItemLCA extends WidgetLCA<TableItem> {
       preserveProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ) );
       preserveProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ) );
       preserveProperty( item, PROP_CELL_FONTS, getCellFonts( item ) );
+      preserveProperty( item, PROP_CELL_STYLES, getCellStyles( item ) );
+      preserveProperty( item, PROP_CELL_BOX_STYLES, getCellBoxStyles( item ) );
       preserveProperty( item, PROP_CHECKED, item.getChecked() );
       preserveProperty( item, PROP_GRAYED, item.getGrayed() );
     }
@@ -114,6 +118,8 @@ public final class TableItemLCA extends WidgetLCA<TableItem> {
     renderProperty( item, PROP_CELL_BACKGROUNDS, getCellBackgrounds( item ), null );
     renderProperty( item, PROP_CELL_FOREGROUNDS, getCellForegrounds( item ), null );
     renderProperty( item, PROP_CELL_FONTS, getCellFonts( item ), null );
+    renderProperty( item, PROP_CELL_STYLES, getCellStyles( item ), null );
+    renderProperty( item, PROP_CELL_BOX_STYLES, getCellBoxStyles( item ), null );
     renderProperty( item, PROP_CHECKED, item.getChecked(), false );
     renderProperty( item, PROP_GRAYED, item.getGrayed(), false );
   }
@@ -162,6 +168,14 @@ public final class TableItemLCA extends WidgetLCA<TableItem> {
 
   private static Font[] getCellFonts( TableItem item ) {
     return getTableItemAdapter( item ).getCellFonts();
+  }
+
+  private static String[] getCellStyles( TableItem item ) {
+    return getTableItemAdapter( item ).getCellStyles();
+  }
+
+  private static String[] getCellBoxStyles( TableItem item ) {
+    return getTableItemAdapter( item ).getCellBoxStyles();
   }
 
   private static boolean wasCleared( TableItem item ) {

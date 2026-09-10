@@ -11,6 +11,9 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.widgets;
 
+import java.util.Map;
+
+import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil;
 import org.eclipse.swt.widgets.Widget;
 
 
@@ -46,6 +49,62 @@ public final class WidgetUtil {
    */
   public static void registerDataKeys( String... keys ) {
     org.eclipse.rap.rwt.internal.lifecycle.WidgetUtil.registerDataKeys( keys );
+  }
+
+  /**
+   * Sets an HTML attribute on the element that represents the given widget in the browser. This is
+   * the way to attach ARIA attributes and roles, <code>data-*</code> attributes, or additional css
+   * classes to a widget:
+   *
+   * <pre>
+   * WidgetUtil.setHtmlAttribute( button, "aria-label", "Save the document" );
+   * WidgetUtil.setHtmlAttribute( table, "data-testid", "order-list" );
+   * WidgetUtil.setHtmlAttribute( composite, "class", "card card--elevated" );
+   * </pre>
+   *
+   * The <code>class</code> attribute is a special case: its value is appended to the css classes
+   * that RWT generates for the widget - the type of the widget, its appearance, and one class per
+   * widget state - instead of replacing them.
+   * <p>
+   * Attributes are rendered on the outer element of the widget. They are not validated: it is up
+   * to the caller to use attribute names and values that are valid HTML, and to use ARIA
+   * attributes that are consistent with the role of the widget.
+   * </p>
+   * <p>
+   * Supported for every <code>Control</code> and for the items of Table, Tree, TabFolder,
+   * CTabFolder, ToolBar, CoolBar, Menu and ExpandBar, as well as for table and tree columns.
+   * Attributes set on a widget of another type are silently ignored by the client.
+   * </p>
+   *
+   * @param widget the widget to set the attribute on, must not be <code>null</code>
+   * @param name the name of the attribute, must not be <code>null</code>
+   * @param value the value of the attribute, or <code>null</code> to remove it
+   * @since 4.1
+   */
+  public static void setHtmlAttribute( Widget widget, String name, String value ) {
+    checkNotNull( widget, "widget" );
+    checkNotNull( name, "name" );
+    WidgetLCAUtil.setHtmlAttribute( widget, name, value );
+  }
+
+  /**
+   * Returns the HTML attributes that were set for the given widget with
+   * {@link #setHtmlAttribute(Widget, String, String)}, as an unmodifiable map. The map is empty if
+   * no attribute was set.
+   *
+   * @param widget the widget to read the attributes of, must not be <code>null</code>
+   * @return the attributes of the widget, never <code>null</code>
+   * @since 4.1
+   */
+  public static Map<String, String> getHtmlAttributes( Widget widget ) {
+    checkNotNull( widget, "widget" );
+    return WidgetLCAUtil.getHtmlAttributes( widget );
+  }
+
+  private static void checkNotNull( Object value, String name ) {
+    if( value == null ) {
+      throw new NullPointerException( name + " must not be null" );
+    }
   }
 
 }

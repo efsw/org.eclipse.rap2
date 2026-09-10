@@ -23,9 +23,12 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.CoolItem", {
 
   destructor : rwt.remote.HandlerUtil.getWidgetDestructor(),
 
-  properties : [ "bounds", "control", "customVariant", "data" ],
+  properties : [ "bounds", "control", "customVariant", "htmlAttributes", "data" ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "bounds" : function( widget, bounds ) {
       widget.setLeft( bounds[ 0 ] );

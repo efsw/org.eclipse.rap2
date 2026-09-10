@@ -33,6 +33,9 @@ rwt.qx.Class.define( "rwt.widgets.Combo", {
     this.setHideFocus( true );
     var appearance = isCCombo ? "ccombo" : "combo";
     this.setAppearance( appearance );
+    this.setAriaRole( "combobox" );
+    this.setAriaAttribute( "aria-haspopup", "listbox" );
+    this.setAriaAttribute( "aria-expanded", "false" );
     this._field.setAppearance( appearance + "-field" );
     this._button.setAppearance( appearance + "-button" );
     this._registerListeners();
@@ -371,6 +374,7 @@ rwt.qx.Class.define( "rwt.widgets.Combo", {
 
     _onListVisibleChanged : function() {
       var listVisible = this._list.getVisible();
+      this.setAriaAttribute( "aria-expanded", listVisible ? "true" : "false" );
       if( this._editable ) {
         this._field.setReadOnly( listVisible );
       }

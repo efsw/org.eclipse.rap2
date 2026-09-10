@@ -20,6 +20,8 @@ rwt.qx.Class.define( "rwt.widgets.Slider", {
 
   construct : function( isHorizontal ) {
     this.base( arguments, isHorizontal );
+    this.setAriaRole( "slider" );
+    this._renderAriaValues();
     this._requestScheduled = false;
     this.addEventListener( "contextmenu", this._onContextMenu, this );
     this.addEventListener( "keypress", this._onKeyPress, this );

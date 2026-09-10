@@ -61,32 +61,15 @@ rwt.qx.Class.define( "rwt.widgets.util.FontSizeCalculation", {
       return this._measureElement( textElement );
     },
 
-    _measureElement : rwt.util.Variant.select( "qx.client", {
-      "default" : function( element ) {
-        var result;
-        if( element.getBoundingClientRect ) {
-          // See Bug 340841
-          var bounds = element.getBoundingClientRect();
-          // In FF 3.0.x getBoundingClientRect has no width/height properties
-          if( bounds.width != null && bounds.height != null ) {
-            result = [ Math.ceil( bounds.width ), Math.round( bounds.height ) ];
-          } else {
-            result = [ element.scrollWidth, element.scrollHeight ];
-          }
-        } else {
-          result = [ element.scrollWidth, element.scrollHeight ];
-        }
-        return this._addOffset( result );
-      },
-      "trident" : function( element ) {
-        var computed = window.getComputedStyle( element, null );
-        var result = [
-          Math.ceil( parseFloat( computed.width ) ), // Ensure Texts are not cut off or wrap
-          Math.round( parseFloat( computed.height ) ) // Ensure vertical alignment looks right
-        ];
-        return this._addOffset( result );
-      }
-    } ),
+    _measureElement : function( element ) {
+      // See Bug 340841
+      // Both dimensions are rounded up, and the height for the same reason as the width: the value
+      // travels to the server as an integer and everything is then built on it - the height of a
+      // label, the height of a grid row. A box one rounding short of the real text is a box that
+      // clips it, and the part that goes missing is the bottom of the descenders.
+      var bounds = element.getBoundingClientRect();
+      return this._addOffset( [ Math.ceil( bounds.width ), Math.ceil( bounds.height ) ] );
+    },
 
     _addOffset : function( bounds ) {
       var x = bounds[ 0 ] > 0 ? bounds[ 0 ] + this._offset : 0;

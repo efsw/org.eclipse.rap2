@@ -34,7 +34,6 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
     this.addEventListener( "mouseup", this._onMouseDownUp, this );
     this._typed = null;
     this._selectionNeedsUpdate = false;
-    this._applyBrowserFixes();
     this._inputOverflow = "hidden";
   },
 
@@ -44,10 +43,6 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
     }
     this._inputElement = null;
     this.__font = null;
-    if( this._checkTimer ) {
-      this._checkTimer.dispose();
-      this._checkTimer = null;
-    }
   },
 
   events: {
@@ -264,10 +259,6 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
         inputElement.style.margin = 0;
         inputElement.style.border = "0 none";
         inputElement.style.background = "transparent";
-        // See Bug 419676: [Text] Input element of Text field may not be vertically centered in IE
-        if( rwt.client.Client.isTrident() ) {
-          inputElement.style.verticalAlign = "top";
-        }
         inputElement.style.overflow = this._inputOverflow;
         inputElement.style.outline = "none";
         inputElement.style.resize = "none";
@@ -550,32 +541,6 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
 
     /////////////////
     // browser quirks
-
-    _applyBrowserFixes : rwt.util.Variant.select( "qx.client", {
-      "default" : function() {},
-      "trident" : function() {
-        // See Bug 372193 - Text widget: Modify Event not fired for Backspace key in IE
-        this._checkTimer = new rwt.client.Timer( 0 );
-        this._checkTimer.addEventListener( "interval", this._checkValueChanged, this );
-        // For delete, backspace, CTRL+X, etc:
-        this.addEventListener( "keypress", this._checkTimer.start, this._checkTimer );
-        this.addEventListener( "keyup", this._checkTimer.start, this._checkTimer );
-        // For context menu: (might not catch the change instantly
-        this.addEventListener( "mousemove", this._checkValueChanged, this );
-        this.addEventListener( "mouseout", this._checkValueChanged, this );
-        // Backup for all other cases (e.g. menubar):
-        this.addEventListener( "blur", this._checkValueChanged, this );
-      }
-    } ),
-
-    _checkValueChanged : function() {
-      this._checkTimer.stop();
-      var newValue = this.getComputedValue();
-      var oldValue = this.getValue();
-      if( newValue !== oldValue ) {
-        this._oninput();
-      }
-    },
 
     _applyBrowserFixesOnCreate : rwt.util.Variant.select( "qx.client", {
       "default" : function() {},

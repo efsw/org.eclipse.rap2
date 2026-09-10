@@ -82,6 +82,7 @@ rwt.qx.Class.define( "rwt.widgets.base.AbstractSlider", {
       }
       this._maximum = value;
       this._renderThumb();
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "changeMaximum" );
     },
 
@@ -92,6 +93,7 @@ rwt.qx.Class.define( "rwt.widgets.base.AbstractSlider", {
     setMinimum : function( value ) {
       this._minimum = value;
       this._renderThumb();
+      this._renderAriaValues();
       this.dispatchSimpleEvent( "changeMinimum" );
     },
 
@@ -149,10 +151,18 @@ rwt.qx.Class.define( "rwt.widgets.base.AbstractSlider", {
 
     _selectionChanged : function() {
       this._renderThumb();
+      this._renderAriaValues();
       if( this._autoRepeat !== "" && !this._repeatTimer.isEnabled() ) {
         this._delayTimer.start();
       }
       this.dispatchSimpleEvent( "selectionChanged" );
+    },
+
+    _renderAriaValues : function() {
+      this.setAriaAttribute( "aria-orientation", this._horizontal ? "horizontal" : "vertical" );
+      this.setAriaAttribute( "aria-valuemin", this._minimum );
+      this.setAriaAttribute( "aria-valuemax", this._maximum );
+      this.setAriaAttribute( "aria-valuenow", this._selection );
     },
 
     _onChangeSize : function() {

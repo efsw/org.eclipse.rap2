@@ -46,11 +46,15 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.TabItem", {
     "toolTipMarkupEnabled",
     "toolTip",
     "customVariant",
+    "htmlAttributes",
     "badge",
     "data"
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "control" : function( widget, value ) {
       if( value !== null ) {

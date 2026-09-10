@@ -35,6 +35,8 @@ rwt.qx.Class.define( "rwt.widgets.GridColumn", {
     this._customVariant = null;
     this._text = "";
     this._font = null;
+    this._background = null;
+    this._foreground = null;
     this._image = null;
     this._footerText = "";
     this._footerFont = null;
@@ -156,6 +158,29 @@ rwt.qx.Class.define( "rwt.widgets.GridColumn", {
     setFont : function( value ) {
       this._font = value ? rwt.html.Font.fromArray( value ) : null;
       this._update();
+    },
+
+    /**
+     * The colours of this header, or null to use the ones of the grid. They are properties and not
+     * declarations pushed through the html attributes because the header label writes its own
+     * colours after applying those attributes, and would win.
+     */
+    setBackground : function( value ) {
+      this._background = value;
+      this._update();
+    },
+
+    getBackground : function() {
+      return this._background;
+    },
+
+    setForeground : function( value ) {
+      this._foreground = value;
+      this._update();
+    },
+
+    getForeground : function() {
+      return this._foreground;
     },
 
     getFont : function() {

@@ -44,6 +44,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridColumn", {
     "fixed",
     "group",
     "customVariant",
+    "background",
+    "foreground",
+    "htmlAttributes",
     "visibility",
     "check",
     "wordWrap",
@@ -53,6 +56,15 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridColumn", {
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
+    "background" : function( widget, value ) {
+      widget.setBackground( value === null ? null : rwt.util.Colors.rgbaToRgbaString( value ) );
+    },
+    "foreground" : function( widget, value ) {
+      widget.setForeground( value === null ? null : rwt.util.Colors.rgbaToRgbaString( value ) );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "toolTipMarkupEnabled" : rwt.remote.HandlerUtil.getControlPropertyHandler( "toolTipMarkupEnabled" ),
     "toolTip" : rwt.remote.HandlerUtil.getControlPropertyHandler( "toolTip" ),

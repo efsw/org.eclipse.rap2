@@ -195,43 +195,21 @@ rwt.qx.Class.define( "rwt.widgets.base.Scrollable", {
       rwt.html.Scroll.disableScrolling( this._clientArea.getElement() );
     },
 
-    _onClientLayout : ( function() {
-      if( rwt.client.Client.isTrident() && rwt.client.Client.getMajor() === 9 ) {
-        return function() {
-          // NOTE [tb] : there is a bug in IE9 where the scrollbar is substracted from the inner
-          //             size of an element, not added. Therefore add the barWidth twice.
-          var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
-          var node = this._clientArea._getTargetNode();
-          var el = this._clientArea.getElement();
-          var width = parseInt( el.style.width, 10 );
-          var height = parseInt( el.style.height, 10 );
-          if( this._vertScrollBar.getDisplay() ) {
-            width += ( 2 * barWidth );
-          }
-          if( this._horzScrollBar.getDisplay() ) {
-            height += ( 2 * barWidth );
-          }
-          node.style.width = width + "px";
-          node.style.height = height + "px";
-        };
-      } else {
-        return function() {
-          var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
-          var node = this._clientArea._getTargetNode();
-          var el = this._clientArea.getElement();
-          var width = parseInt( el.style.width, 10 );
-          var height = parseInt( el.style.height, 10 );
-          if( this._vertScrollBar.getDisplay() ) {
-            width += barWidth;
-          }
-          if( this._horzScrollBar.getDisplay() ) {
-            height += barWidth;
-          }
-          node.style.width = width + "px";
-          node.style.height = height + "px";
-        };
+    _onClientLayout : function() {
+      var barWidth = rwt.widgets.base.Scrollable.getNativeScrollBarWidth();
+      var node = this._clientArea._getTargetNode();
+      var el = this._clientArea.getElement();
+      var width = parseInt( el.style.width, 10 );
+      var height = parseInt( el.style.height, 10 );
+      if( this._vertScrollBar.getDisplay() ) {
+        width += barWidth;
       }
-    }() ),
+      if( this._horzScrollBar.getDisplay() ) {
+        height += barWidth;
+      }
+      node.style.width = width + "px";
+      node.style.height = height + "px";
+    },
 
     ////////////
     // Scrolling

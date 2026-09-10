@@ -41,6 +41,8 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridItem", {
     "cellBackgrounds",
     "cellForegrounds",
     "cellFonts",
+    "cellStyles",
+    "cellBoxStyles",
     "expanded",
     "checked",
     "grayed",
@@ -48,6 +50,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridItem", {
     "cellGrayed",
     "cellCheckable",
     "customVariant",
+    "htmlAttributes",
     "height",
     "index",
     "columnSpans",
@@ -55,6 +58,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridItem", {
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "data" : rwt.remote.HandlerUtil.getControlPropertyHandler( "data" ),
     "background" : function( widget, value ) {
       var background = value == null ? null : rwt.util.Colors.rgbToRgbString( value );
@@ -77,6 +83,12 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.GridItem", {
         }
       }
       widget.setCellBackgrounds( backgrounds );
+    },
+    "cellStyles" : function( widget, value ) {
+      widget.setCellStyles( value || [] );
+    },
+    "cellBoxStyles" : function( widget, value ) {
+      widget.setCellBoxStyles( value || [] );
     },
     "cellForegrounds" : function( widget, value ) {
       var foregrounds = [];

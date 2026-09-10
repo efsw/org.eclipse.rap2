@@ -174,6 +174,49 @@ public interface Application {
   void addStyleSheet( String themeId, String styleSheetLocation, ResourceLoader resourceLoader );
 
   /**
+   * Adds a stylesheet that is served to the browser untouched and linked in the head of every
+   * page of the application. Unlike {@link #addStyleSheet(String, String)}, the file is not read
+   * by the theme engine and is not restricted to the properties a RAP theme understands: it is
+   * plain CSS, and everything the browser supports works in it - media queries, pseudo classes,
+   * transitions, container queries.
+   * <p>
+   * The stylesheet is linked after the custom properties of the theme, so it can redefine them.
+   * Redefining <code>--rwt-Button-background-color</code> changes the background of every button,
+   * and doing so inside <code>&#64;media (prefers-color-scheme: dark)</code> gives the application
+   * a dark variant. The generated properties are named
+   * <code>--rwt-&lt;element&gt;-&lt;property&gt;</code>, after the themeable elements and the
+   * properties documented for them.
+   * </p>
+   * <p>
+   * The widgets themselves carry the css classes needed to address them:
+   * <code>rwt-&lt;Type&gt;</code>, <code>rwt-appearance-&lt;appearance&gt;</code>, one
+   * <code>is-&lt;state&gt;</code> class per widget state and
+   * <code>rwt-variant-&lt;name&gt;</code> for {@link RWT#CUSTOM_VARIANT}.
+   * </p>
+   * <p>
+   * The file is loaded with the classloader of the <code>ApplicationConfiguration</code>.
+   * </p>
+   *
+   * @param styleSheetLocation the location of the CSS file in the format accepted by
+   *          {@link ClassLoader#getResource(String)}
+   * @since 4.1
+   */
+  void addLinkedStyleSheet( String styleSheetLocation );
+
+  /**
+   * Adds a stylesheet that is served to the browser untouched and linked in the head of every
+   * page of the application, loaded with the given resource loader.
+   *
+   * @param styleSheetLocation the location of the CSS file in the format accepted by the given
+   *          resource loader
+   * @param resourceLoader the resource loader that is able to load the stylesheet from the given
+   *          location
+   * @see #addLinkedStyleSheet(String)
+   * @since 4.1
+   */
+  void addLinkedStyleSheet( String styleSheetLocation, ResourceLoader resourceLoader );
+
+  /**
    * Set an initial attribute in the application context.
    *
    * @param name the name of the attribute, must not be <code>null</code>

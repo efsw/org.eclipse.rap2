@@ -138,6 +138,36 @@ public class WebClient implements Client {
   public static final String FAVICON = PREFIX + ".favicon";
 
   /**
+   * Entrypoint property name for the web app manifest, the file that tells the browser how the
+   * application should behave when it is installed to a home screen or a desktop: its name, its
+   * icons, whether it opens in a window of its own. The value must be the path where the manifest
+   * can be accessed on the server, and the resource has to be registered.
+   *
+   * @see Application#addResource(String, ResourceLoader)
+   * @see Application#addEntryPoint(String, Class, Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
+   *
+   * @since 4.1
+   */
+  public static final String WEB_MANIFEST = PREFIX + ".webManifest";
+
+  /**
+   * Entrypoint property name for the color the browser paints its own surroundings with - the
+   * address bar on mobile, the title bar of an installed application. The value must be a css
+   * color.
+   * <p>
+   * When it is not given, the background color of the <code>Display</code> in the current theme is
+   * used, so the browser matches the application without anything having to be declared here.
+   * </p>
+   *
+   * @see Application#addEntryPoint(String, Class, Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
+   *
+   * @since 4.1
+   */
+  public static final String THEME_COLOR = PREFIX + ".themeColor";
+
+  /**
    * Entrypoint property name for specifing the content security policy. The value must contain a
    * valid string with content security policy directives.
    * <p>

@@ -169,6 +169,9 @@ rwt.qx.Class.define( "rwt.widgets.Grid", {
       }
       this._rowContainer.setBaseAppearance( map.appearance );
       this.setAppearance( map.appearance );
+      // A Table is a flat grid, a Tree is a grid whose rows can be expanded: treegrid.
+      this.setAriaRole( map.appearance === "table" ? "grid" : "treegrid" );
+      this.setAriaAttribute( "aria-multiselectable", this._hasMultiSelection ? "true" : "false" );
     },
 
     ///////////////////////////

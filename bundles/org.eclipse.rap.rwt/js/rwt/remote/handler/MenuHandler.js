@@ -34,10 +34,14 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Menu", {
     "bounds",
     "enabled",
     "customVariant",
+    "htmlAttributes",
     "direction"
   ],
 
   propertyHandler : {
+    "htmlAttributes" : function( widget, value ) {
+      widget.setServerHtmlAttributes( value === null ? {} : value );
+    },
     "bounds" : function( widget, value ) {
       if( widget.hasState( "rwt_BAR" ) ) {
         widget.setLeft( value[ 0 ] );

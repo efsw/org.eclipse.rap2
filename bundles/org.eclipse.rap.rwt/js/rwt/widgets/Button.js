@@ -31,6 +31,22 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
      case "radio":
        this.setAppearance( "radio-button" );
     }
+    switch( buttonType ) {
+     case "check":
+       this.setAriaRole( "checkbox" );
+       this.setAriaSelectionAttribute( "aria-checked" );
+     break;
+     case "radio":
+       this.setAriaRole( "radio" );
+       this.setAriaSelectionAttribute( "aria-checked" );
+     break;
+     case "toggle":
+       this.setAriaRole( "button" );
+       this.setAriaSelectionAttribute( "aria-pressed" );
+     break;
+     default:
+       this.setAriaRole( "button" );
+    }
     this.initTabIndex();
     this._rawText = null;
     this._mnemonicIndex = null;

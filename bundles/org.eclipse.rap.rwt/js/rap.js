@@ -142,6 +142,18 @@ rap = {
    * @param {string} type The type of the event
    * @param {Function} listener The callback function
    */
+  /**
+   * @description Re-reads the theme values that a stylesheet has redefined through the
+   * <code>--rwt-*</code> custom properties, and repaints every widget with them. Call it after
+   * something changed which stylesheet applies - switching a "dark" class on the html element,
+   * for instance. It is not needed for a media query that reacts on its own, unless the widgets
+   * are already on screen.
+   * @since 4.1
+   */
+  refreshTheme : function() {
+    rwt.theme.ThemeStore.getInstance().refresh();
+  },
+
    off : function( type, handler ) {
      if( this._.events[ type ] ) {
        var index = this._.events[ type ].indexOf( handler );

@@ -27,8 +27,12 @@ import org.eclipse.rap.rwt.remote.RemoteObject;
 
 public class ClientInfoImpl implements ClientInfo {
 
+  private static final String LIGHT = "light";
+
   private Integer timezoneOffset;
   private Locale[] locales;
+  private String colorScheme = LIGHT;
+  private boolean reducedMotion;
 
   public ClientInfoImpl() {
     initialize();
@@ -63,12 +67,30 @@ public class ClientInfoImpl implements ClientInfo {
     return locales == null ? new Locale[ 0 ] : locales.clone();
   }
 
+  @Override
+  public String getColorScheme() {
+    return colorScheme;
+  }
+
+  @Override
+  public boolean isReducedMotion() {
+    return reducedMotion;
+  }
+
   private final class InfoOperationHandler extends AbstractOperationHandler {
     @Override
     public void handleSet( JsonObject properties ) {
       JsonValue value = properties.get( "timezoneOffset" );
       if( value != null ) {
         timezoneOffset = Integer.valueOf( value.asInt() );
+      }
+      value = properties.get( "colorScheme" );
+      if( value != null ) {
+        colorScheme = value.asString();
+      }
+      value = properties.get( "reducedMotion" );
+      if( value != null ) {
+        reducedMotion = value.asBoolean();
       }
     }
   }

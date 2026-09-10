@@ -252,6 +252,12 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
       if( this._appModal ) {
         this.setStyleProperty( "position", "fixed" );
       }
+      // Only a modal shell is a dialog for assistive technology. The main application shell is
+      // the document itself, and announcing it as a dialog would be wrong.
+      if( this._appModal ) {
+        this.setAriaRole( "dialog" );
+        this.setAriaAttribute( "aria-modal", "true" );
+      }
     },
 
     // TODO [rst] Find a generic solution for state inheritance

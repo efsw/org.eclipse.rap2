@@ -31,20 +31,25 @@ import org.eclipse.rap.rwt.internal.RWTMessages;
 import org.eclipse.rap.rwt.internal.application.ApplicationContextImpl;
 import org.eclipse.rap.rwt.internal.lifecycle.EntryPointManager;
 import org.eclipse.rap.rwt.internal.service.StartupPageTemplate.VariableWriter;
+import org.eclipse.rap.rwt.internal.theme.CssColor;
 import org.eclipse.rap.rwt.internal.theme.CssImage;
+import org.eclipse.rap.rwt.internal.theme.CssValue;
 import org.eclipse.rap.rwt.internal.theme.SimpleSelector;
+import org.eclipse.rap.rwt.internal.theme.Theme;
 import org.eclipse.rap.rwt.internal.util.HTTP;
 
 
 public class StartupPage {
   private final ApplicationContextImpl applicationContext;
   private final List<String> jsLibraries;
+  private final List<String> styleSheets;
   private String clientJsLibrary;
   StartupPageTemplate startupPageTemplate;
 
   public StartupPage( ApplicationContextImpl applicationContext ) {
     this.applicationContext = applicationContext;
     jsLibraries = new ArrayList<>();
+    styleSheets = new ArrayList<>();
   }
 
   public void activate() {
@@ -61,6 +66,15 @@ public class StartupPage {
 
   public void addJsLibrary( String location ) {
     jsLibraries.add( location );
+  }
+
+  /**
+   * Adds a registered resource to be linked as a stylesheet in the head of the startup page,
+   * after the custom properties of the theme. The name is resolved to a location when the page is
+   * written, because the resource is only registered when the application context is activated.
+   */
+  public void addLinkedStyleSheet( String resourceName ) {
+    styleSheets.add( resourceName );
   }
 
   public void send( HttpServletResponse response ) throws IOException {
@@ -107,7 +121,78 @@ public class StartupPage {
       String favIocnMarkup = String.format( pattern, getResourceLocation( favIcon ) );
       printWriter.write( favIocnMarkup );
     }
+    writeWebManifest( printWriter, properties );
+    writeThemeColor( printWriter, properties );
+    writeStyleSheets( printWriter );
+    // Written last, so that an entry point can still override what the stylesheets above declare
     writeEntryPointProperty( printWriter, WebClient.HEAD_HTML );
+  }
+
+  protected void writeWebManifest( PrintWriter printWriter, Map<String, String> properties ) {
+    String manifest = properties.get( WebClient.WEB_MANIFEST );
+    if( manifest != null && manifest.length() > 0 ) {
+      printWriter.write( "    <link rel=\"manifest\" href=\"" );
+      printWriter.write( getResourceLocation( manifest ) );
+      printWriter.write( "\" />\n" );
+    }
+  }
+
+  /**
+   * Writes the color the browser paints its own surroundings with. Unless the entry point names
+   * one, it is the background of the Display in the current theme, so that the address bar of a
+   * phone and the title bar of an installed application follow the theme without anyone having to
+   * repeat the color.
+   */
+  protected void writeThemeColor( PrintWriter printWriter, Map<String, String> properties ) {
+    String themeColor = properties.get( WebClient.THEME_COLOR );
+    if( themeColor == null || themeColor.length() == 0 ) {
+      themeColor = getDisplayBackgroundColor();
+    }
+    if( themeColor != null ) {
+      printWriter.write( "    <meta name=\"theme-color\" content=\"" );
+      printWriter.write( themeColor );
+      printWriter.write( "\" />\n" );
+    }
+  }
+
+  private String getDisplayBackgroundColor() {
+    String servletPath = getRequest().getServletPath();
+    CssValue value = getCssValue( getThemeIdFor( servletPath ),
+                                  "Display",
+                                  "background-color",
+                                  SimpleSelector.DEFAULT,
+                                  null );
+    if( value instanceof CssColor ) {
+      CssColor color = ( CssColor )value;
+      return color.isTransparent() ? null : color.toDefaultString();
+    }
+    return null;
+  }
+
+  /**
+   * Writes the link to the custom properties of the current theme, followed by the stylesheets
+   * the application has registered. The order is what makes the whole thing work: the generated
+   * properties come first, so that a stylesheet of the application can redefine them.
+   */
+  protected void writeStyleSheets( PrintWriter printWriter ) {
+    writeStyleSheetTag( printWriter, getCssVariablesLocation() );
+    for( String resourceName : styleSheets ) {
+      writeStyleSheetTag( printWriter, getResourceLocation( resourceName ) );
+    }
+  }
+
+  protected void writeStyleSheetTag( PrintWriter printWriter, String location ) {
+    if( location != null ) {
+      printWriter.write( "    <link rel=\"stylesheet\" type=\"text/css\" href=\"" );
+      printWriter.write( location );
+      printWriter.write( "\" />\n" );
+    }
+  }
+
+  private String getCssVariablesLocation() {
+    String themeId = getThemeIdFor( getRequest().getServletPath() );
+    Theme theme = applicationContext.getThemeManager().getTheme( themeId );
+    return theme == null ? null : theme.getCssVariablesLocation();
   }
 
   private void writeLibraries( PrintWriter printWriter, String nonceValue ) {

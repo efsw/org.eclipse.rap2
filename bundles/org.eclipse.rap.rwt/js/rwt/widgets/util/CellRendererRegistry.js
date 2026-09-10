@@ -119,35 +119,17 @@ var defaultTextRenderer = {
     result.style.textOverflow = "ellipsis";
     return result;
   },
-  "renderContent" : Variant.select( "qx.client", {
-    "trident" : function( element, content, cellData, options ) {
-      var text = content || "";
-      if( options.markupEnabled ) {
-        if( element.rap_Markup !== text ) {
-          element.innerHTML = text;
-          element.rap_Markup = text;
-        }
-      } else if( options.seeable ) {
-        if( options.removeNewLines ) {
-          text = Encoding.replaceNewLines( text, "" );
-        }
-        element.innerText = text; // considerably faster than innerHTML
-      } else {
-        element.innerHTML = escapeText( text, options.removeNewLines );
+  "renderContent" : function( element, content, cellData, options ) {
+    var text = content || "";
+    if( options.markupEnabled ) {
+      if( text !== element.rap_Markup ) {
+        element.innerHTML = text;
+        element.rap_Markup = text;
       }
-    },
-    "default" : function( element, content, cellData, options ) {
-      var text = content || "";
-      if( options.markupEnabled ) {
-        if( text !== element.rap_Markup ) {
-          element.innerHTML = text;
-          element.rap_Markup = text;
-        }
-      } else {
-        element.innerHTML = escapeText( text, options.removeNewLines );
-      }
+    } else {
+      element.innerHTML = escapeText( text, options.removeNewLines );
     }
-  } )
+  }
 };
 
 var defaultImageRenderer = {

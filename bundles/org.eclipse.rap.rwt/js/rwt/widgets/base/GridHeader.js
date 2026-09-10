@@ -24,7 +24,7 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
     this._footer = argsMap.footer ? true : false;
     this._baseAppearance = argsMap.appearance;
     this._config = argsMap.config;
-    this._dummyColumn = this._createDummyColumn();
+this._dummyColumn = this._createDummyColumn();
     this._currentDragColumn = null;
     this._feedbackLabel = null;
     this._labelToColumnMap = {};
@@ -128,21 +128,24 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
     _renderHeaderLabel : function( label, column ) {
       label.setWidth( column.getWidth() );
       label.setHoverEffect( column.getMoveable() );
-      label.clearHtmlAttributes();
-      label.setHtmlAttributes( column.getHtmlAttributes() );
       if( column.getFont() !== null ) {
         label.setFont( column.getFont() );
       } else {
         label.resetFont();
       }
-      if( this._config.headerForeground != null ) {
-        label.setTextColor( this._config.headerForeground );
+      // il colore della colonna se ne ha uno, altrimenti quello della griglia
+      var foreground = column.getForeground() != null ? column.getForeground()
+                                                      : this._config.headerForeground;
+      if( foreground != null ) {
+        label.setTextColor( foreground );
       } else {
         label.resetTextColor();
       }
-      if( this._config.headerBackground != null ) {
+      var background = column.getBackground() != null ? column.getBackground()
+                                                      : this._config.headerBackground;
+      if( background != null ) {
         label.setBackgroundGradient( null );
-        label.setBackgroundColor( this._config.headerBackground );
+        label.setBackgroundColor( background );
       } else {
         label.resetBackgroundGradient();
         label.resetBackgroundColor();
@@ -156,9 +159,121 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
       }
       this._renderLabelY( label, column );
       label.setZIndex( column.isFixed() ? 1e7 : 1 );
+/*
+       * Gli attributi html per ultimi, e non per ordine di comodo: le dichiarazioni css arrivano da
+       * qui, e sopra si sono appena scritti font e colori.
+       */
+      var parts = this._splitHtmlAttributes( column.getHtmlAttributes() );
+      label.clearHtmlAttributes();
+      label.setHtmlAttributes( parts.attributes );
+      this._renderHeaderShape( label, parts.shape );
+      /*
+       * Un'intestazione che ha una scatola sua non prende le righe condivise della fascia: il
+       * separatore verticale a destra e la riga sotto le farebbero da contorno doppio. Le disegna
+       * il bordo del widget, che se lo costruisce l'appearance, quindi la soppressione si dice
+       * all'appearance - con uno stato, che e' l'unico modo stabile: l'appearance si ricalcola
+       * dagli stati a ogni cambio di stato, mentre degli zeri scritti sull'elemento li
+       * rimetterebbe al primo passaggio del mouse.
+       */
+      label.toggleState( "boxed", parts.boxed );
     },
 
-    _renderLabelY : function( label, column ) {
+    /*
+     * Divide le dichiarazioni in due: quelle della forma, che vanno sull'elemento nostro, e tutte
+     * le altre, che restano sull'etichetta.
+     *
+     * Dividere e non duplicare: se il bordo restasse anche sull'etichetta, al primo disegno i due
+     * si sommerebbero - due linee concentriche invece di una - e al primo cambio di stato una
+     * sparirebbe, cioe' la forma cambierebbe passando col mouse.
+     *
+     * Le dichiarazioni si leggono da un elemento di prova e non dalla stringa, cosi' una
+     * scorciatoia scritta dal server ("border: 1px solid ...") arriva qui gia' scomposta. Il
+     * risultato e' una COPIA della mappa: quella del modello di colonna non si tocca.
+     */
+    _splitHtmlAttributes : function( attributes ) {
+      var style = attributes ? attributes[ "style" ] : null;
+      if( !style ) {
+        return { attributes : attributes, shape : null, boxed : false };
+      }
+      var probe = document.createElement( "div" );
+      probe.style.cssText = style;
+      var shape = "";
+      var rest = "";
+      var boxed = false;
+      for( var i = 0; i < probe.style.length; i++ ) {
+        var name = probe.style.item( i );
+        var value = probe.style.getPropertyValue( name );
+        var declaration = name + ":" + value + ";";
+        var isBorder = name.indexOf( "border" ) === 0;
+        if( isBorder || name.indexOf( "background" ) === 0 ) {
+          shape += declaration;
+          // "ha una scatola" vuol dire un bordo che si vede: un raggio da solo non lo e', un
+          // bordo di larghezza zero nemmeno, e border-image-width - che la scorciatoia "border"
+          // si porta dietro sempre, col valore 1 - non e' una larghezza di bordo
+          if(    isBorder
+              && name.indexOf( "border-image" ) !== 0
+              && name.indexOf( "width" ) !== -1
+              && parseFloat( value ) > 0 )
+          {
+            boxed = true;
+          }
+        } else {
+          rest += declaration;
+        }
+      }
+      var result = {};
+      for( var key in attributes ) {
+        result[ key ] = attributes[ key ];
+      }
+      if( rest === "" ) {
+        delete result[ "style" ];
+      } else {
+        result[ "style" ] = rest;
+      }
+      return { attributes : result, shape : shape === "" ? null : shape, boxed : boxed };
+    },
+
+    /*
+     * La FORMA di un'intestazione - il riquadro, gli angoli, e i livelli di sfondo con cui si
+     * disegnano pallino, icone, misuratore e barra - va su un elemento nostro dentro l'etichetta,
+     * non sull'etichetta.
+     *
+     * Sull'etichetta non ci puo' stare, e non e' questione di ordine di scrittura: fondo e bordo
+     * li scrive il client stesso, dal proprio bookkeeping dello stile, ogni volta che uno stato
+     * cambia. Una scorciatoia "background" azzera tutta la famiglia e si porta via le immagini; una
+     * scrittura del bordo rifa' bordo e angoli da capo. Le nostre dichiarazioni non stanno in quel
+     * bookkeeping, quindi vengono cancellate comunque - e per di piu' quelle scritture arrivano nel
+     * DOM quando la coda dei widget si svuota, non appena assegnate.
+     *
+     * Sull'elemento nostro invece nessuno scrive, ed e' la stessa ragione per cui la forma di una
+     * cella sta sull'elemento interno e non sulla cella. Sull'etichetta resta quello che il client
+     * non tocca: padding, spaziatura fra le lettere, font e colore del testo.
+     *
+     * z-index -1 mette l'elemento DIETRO AL TESTO e davanti al fondo dell'etichetta: senza, un
+     * colore di fondo dichiarato - una pastiglia - coprirebbe il testo. Funziona perche'
+     * l'etichetta e' sempre un contesto di impilamento: e' posizionata e il client le da' uno
+     * z-index (vedi _renderHeaderLabel).
+     */
+    _renderHeaderShape : function( label, shape ) {
+      var node = label.$headerShape;
+      if( !shape ) {
+        if( node ) {
+          node.style.cssText = "display:none";
+        }
+        return;
+      }
+      if( !node ) {
+        node = document.createElement( "div" );
+        label.$headerShape = node;
+        // col wrapper, come MultiCellWidget aggancia i suoi nodi di cella: se l'elemento
+        // dell'etichetta non c'e' ancora, ci pensa lui quando arriva
+        label.$el.append( node );
+      }
+      node.style.cssText =   "position:absolute;left:0;top:0;right:0;bottom:0;"
+                           + "pointer-events:none;z-index:-1;" + shape;
+    },
+
+_renderLabelY : function( label, column ) {
       if( column.isGroup() ) {
         label.setTop( 0 );
         label.setHeight( column.getHeight() );
