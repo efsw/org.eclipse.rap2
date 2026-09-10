@@ -49,6 +49,7 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     }
     this.initTabIndex();
     this._rawText = null;
+    this._rawSecondaryText = null;
     this._mnemonicIndex = null;
     this._markupEnabled = false;
   },
@@ -62,6 +63,23 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     tabIndex : {
       refine : true,
       init : 1
+    },
+
+    /*
+     * Il colore e il font del secondo testo arrivano dall'appearance, che li legge dall'elemento di
+     * tema Button-SecondaryText: sono proprieta' e non valori scritti a mano perche' l'appearance
+     * si applica per proprieta', e cosi' seguono gli stati del pulsante (disabilitato, hover).
+     */
+    secondaryTextColor : {
+      apply : "_applySecondaryTextStyle",
+      nullable : true,
+      themeable : true
+    },
+
+    secondaryFont : {
+      apply : "_applySecondaryTextStyle",
+      nullable : true,
+      themeable : true
     }
 
   },
@@ -77,6 +95,14 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._mnemonicIndex = null;
       this._applyText( false );
       this.dispatchSimpleEvent( "changeText", this ); // used by Synchronizer.js
+    },
+
+    /**
+     * Il secondo testo, che sta nella quarta cella con colore e font suoi.
+     */
+    setSecondaryText : function( value ) {
+      this._rawSecondaryText = value;
+      this._applySecondaryText();
     },
 
     setMnemonicIndex : function( value ) {
@@ -149,6 +175,74 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
             event.success = true;
           }
         break;
+      }
+    },
+
+    /*
+     * La cella del secondo testo si misura da se', e non e' un lusso: il MultiCellWidget misura
+     * OGNI cella di testo col font del widget (__fontCache), quindi un secondo testo di peso
+     * normale accanto a un principale in grassetto risulterebbe piu' largo del vero e si
+     * porterebbe dietro dello spazio vuoto. Qui la misura si fa col font suo, lo stesso con cui la
+     * misura il server.
+     */
+    _applySecondaryText : function() {
+      var text = this._rawSecondaryText;
+      if( text ) {
+        var escaped = this._markupEnabled ? text : rwt.util.Encoding.escapeText( text, undefined );
+        this.setCellContent( 3, escaped );
+        this._measureSecondaryCell( escaped );
+      } else {
+        this.setCellContent( 3, null );
+        this.setCellDimension( 3, null, null );
+      }
+    },
+
+    _measureSecondaryCell : function( escaped ) {
+      var font = this.getSecondaryFont();
+      if( font == null ) {
+        // senza un font suo vale la misura del widget, che e' quella che fa il MultiCellWidget
+        this.setCellDimension( 3, null, null );
+        return;
+      }
+      var props = {};
+      font.renderStyle( props );
+      var dimension = rwt.widgets.util.FontSizeCalculation.computeTextDimensions( escaped, props, null );
+      this.setCellDimension( 3, dimension[ 0 ], dimension[ 1 ] );
+    },
+
+    _applySecondaryTextStyle : function() {
+      if( this._rawSecondaryText ) {
+        this._measureSecondaryCell( this.getCellContent( 3 ) );
+      }
+      this._writeSecondaryTextStyle();
+    },
+
+    /*
+     * Colore e font si scrivono sul nodo della cella, che e' l'unico posto dove possono stare: il
+     * widget ha un colore e un font suoi e valgono per tutte le celle. Il nodo puo' non esserci
+     * ancora - le celle nascono quando la coda si svuota - e per questo la scrittura si rifa' dopo
+     * ogni aggiornamento delle etichette (vedi _updateLabel).
+     */
+    _writeSecondaryTextStyle : function() {
+      var node = this.getCellNode( 3 );
+      if( node == null ) {
+        return;
+      }
+      // la classe serve al foglio css puro del web, per raggiungere il secondo testo di UN pulsante
+      node.className = "rwt-button-secondary";
+      var color = this.getSecondaryTextColor();
+      node.style.color = color != null && color !== "undefined" ? color : "";
+      var font = this.getSecondaryFont();
+      if( font != null ) {
+        font.renderElement( node );
+      }
+    },
+
+    // overwritten: dopo che l'etichetta e' stata scritta, il suo stile va rimesso
+    _updateLabel : function( cell ) {
+      this.base( arguments, cell );
+      if( cell === 3 ) {
+        this._writeSecondaryTextStyle();
       }
     },
 

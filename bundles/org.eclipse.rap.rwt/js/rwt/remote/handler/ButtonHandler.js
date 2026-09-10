@@ -47,6 +47,13 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
      * @param {string} text the new text
      */
     "text",
+    /**
+     * @name setSecondaryText
+     * @methodOf Button#
+     * @description Sets a second text, shown after the main one with a style of its own.
+     * @param {string} secondaryText the new secondary text
+     */
+    "secondaryText",
     "mnemonicIndex",
     "alignment",
     "image",

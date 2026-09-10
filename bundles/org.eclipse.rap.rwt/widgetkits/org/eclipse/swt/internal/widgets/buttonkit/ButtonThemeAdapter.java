@@ -12,6 +12,7 @@
 package org.eclipse.swt.internal.widgets.buttonkit;
 
 import org.eclipse.rap.rwt.internal.theme.Size;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.rap.rwt.internal.theme.WidgetMatcher;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.widgets.controlkit.ControlThemeAdapterImpl;
@@ -43,6 +44,21 @@ public class ButtonThemeAdapter extends ControlThemeAdapterImpl {
 
   public int getCheckSpacing( Button button ) {
     return getCssDimension( "Button", "spacing", button );
+  }
+
+  /**
+   * The font of the button's secondary text: the server measures the secondary text with it, and
+   * the client writes it on the cell that holds it.
+   *
+   * @see Button#setSecondaryText(String)
+   */
+  public Font getSecondaryTextFont( Button button ) {
+    return getCssFont( "Button-SecondaryText", "font", button );
+  }
+
+  /** The gap between the main text and the secondary one. */
+  public int getSecondaryTextSpacing( Button button ) {
+    return getCssDimension( "Button-SecondaryText", "spacing", button );
   }
 
   public Size getCheckSize( Button button ) {

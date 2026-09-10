@@ -247,6 +247,21 @@ Button[TOGGLE]:selected:hover {
   );
 }
 
+/*
+   Il secondo testo di un pulsante: piu' chiaro del principale e di peso normale, cosi' si legge
+   come una nota accanto al comando e non come parte del comando. Il font va dichiarato per esteso
+   perche' il server misura il secondo testo proprio con questo.
+*/
+Button-SecondaryText {
+  color: #8a8a8a;
+  font: 14px Verdana, "Lucida Sans", Arial, Helvetica, sans-serif;
+  spacing: 6px;
+}
+
+Button-SecondaryText:disabled {
+  color: #d2d2d2;
+}
+
 Button[CHECK],
 Button[RADIO] {
   padding: 3px 3px 3px 0;

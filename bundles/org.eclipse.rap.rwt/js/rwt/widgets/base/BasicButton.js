@@ -86,7 +86,12 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicButton", {
   },
 
   members : {
-    _CELLORDER : [ "image", "image", "label" ],
+    /*
+     * 0 e' l'indicatore di scelta (spunta, radio), 1 l'immagine, 2 il testo, 3 il secondo testo.
+     * Una cella senza contenuto non crea nodi e non occupa spazio, quindi la quarta non cambia
+     * niente per i pulsanti che non ce l'hanno.
+     */
+    _CELLORDER : [ "image", "image", "label", "label" ],
 
     _applyIcon : function( newValue ) {
       this.setImage.apply( this, newValue );

@@ -63,6 +63,7 @@ import org.eclipse.swt.internal.widgets.buttonkit.ButtonThemeAdapter;
 public class Button extends Control {
 
   private String text = "";
+  private String secondaryText = "";
   private boolean selected;
   private boolean grayed;
   private Image image;
@@ -176,6 +177,57 @@ public class Button extends Control {
   public String getText() {
     checkWidget();
     return text;
+  }
+
+  /**
+   * Sets a second, secondary text on the receiver, shown after the main one with a style of its
+   * own - the theme element <code>Button-SecondaryText</code> gives it its color and font.
+   * <p>
+   * It is meant for the piece of text that is not the command but says something about it: the
+   * function key of a command bar button ("Save" / "F5"), a shortcut, a counter. Appending it to
+   * the main text would give it the main text's color and weight, which is exactly what makes it
+   * a second text.
+   * </p>
+   * <p>
+   * The secondary text takes part in <code>computeSize</code>, measured with its own font, so the
+   * preferred width of the button accounts for both texts.
+   * </p>
+   *
+   * @param secondaryText the new secondary text, an empty string for none
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the text is null</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void setSecondaryText( String secondaryText ) {
+    checkWidget();
+    if( secondaryText == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    if( ( style & SWT.ARROW ) == 0 ) {
+      this.secondaryText = secondaryText;
+    }
+  }
+
+  /**
+   * Returns the receiver's secondary text, an empty string if it has never been set.
+   *
+   * @return the receiver's secondary text
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setSecondaryText(String)
+   */
+  public String getSecondaryText() {
+    checkWidget();
+    return secondaryText;
   }
 
   /**
@@ -427,6 +479,23 @@ public class Button extends Control {
           wrapWidth = wHint - width - ( padding.left + padding.right );
         }
         extent = textExtent( font, text, wrapWidth, markupEnabled );
+        width += extent.x;
+        height = Math.max( height, extent.y );
+      }
+      /*
+       * Il secondo testo entra nella misura, e con il SUO font: il peso e la dimensione li da'
+       * l'elemento di tema Button-SecondaryText, e un "F5" di peso normale accanto a un "Salva" in
+       * grassetto e' piu' stretto di quanto sarebbe nel font del pulsante. Senza questa misura la
+       * larghezza preferita non basterebbe e il secondo testo verrebbe troncato.
+       */
+      if( secondaryText.length() > 0 ) {
+        if( hasText || hasImage ) {
+          width += themeAdapter.getSecondaryTextSpacing( this );
+        }
+        Point extent = textExtent( themeAdapter.getSecondaryTextFont( this ),
+                                   secondaryText,
+                                   SWT.DEFAULT,
+                                   isMarkupEnabledFor( this ) );
         width += extent.x;
         height = Math.max( height, extent.y );
       }

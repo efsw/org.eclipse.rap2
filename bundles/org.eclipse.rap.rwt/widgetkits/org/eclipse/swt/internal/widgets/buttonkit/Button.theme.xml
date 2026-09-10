@@ -127,6 +127,26 @@
     <state name="focused"
         description="Applies to focused buttons." />
 
+    <element name="Button-SecondaryText"
+        description="The second text of a Button, shown after the main one with a style of its own" >
+
+      <property name="color"
+          description="Text color of the secondary text." />
+
+      <property name="font"
+          description="Font of the secondary text. The server measures the secondary text with this font, so a change here changes the preferred width of the button." />
+
+      <property name="spacing"
+          description="The gap between the main text and the secondary one." />
+
+      <state name="disabled"
+          description="Applies when the button is disabled." />
+
+      <state name="hover"
+          description="Applies while the user hovers over the button." />
+
+    </element>
+
     <element name="Button-CheckIcon"
         description="The icon to indicate the check and/or grayed state of a Button with style CHECK" >
 

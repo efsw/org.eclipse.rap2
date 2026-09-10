@@ -32,6 +32,9 @@ var appearances = {
         result.font = decoratedFont;
       }
       result.textColor = tv.getCssColor( "Button", "color" );
+      // il secondo testo ha colore e font suoi, e seguono gli stati del pulsante
+      result.secondaryTextColor = tv.getCssColor( "Button-SecondaryText", "color" );
+      result.secondaryFont = tv.getCssFont( "Button-SecondaryText", "font" );
       result.backgroundColor = tv.getCssColor( "Button", "background-color" );
       result.backgroundImage = tv.getCssImage( "Button", "background-image" );
       result.backgroundRepeat = tv.getCssIdentifier( "Button", "background-repeat" );

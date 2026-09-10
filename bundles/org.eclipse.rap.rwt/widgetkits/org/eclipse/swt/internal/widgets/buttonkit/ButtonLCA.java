@@ -46,6 +46,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   };
 
   private static final String PROP_TEXT = "text";
+  private static final String PROP_SECONDARY_TEXT = "secondaryText";
   private static final String PROP_MNEMONIC_INDEX = "mnemonicIndex";
   private static final String PROP_IMAGE = "image";
   private static final String PROP_SELECTION = "selection";
@@ -59,6 +60,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   @Override
   public void preserveValues( Button button ) {
     preserveProperty( button, PROP_TEXT, button.getText() );
+    preserveProperty( button, PROP_SECONDARY_TEXT, button.getSecondaryText() );
     preserveProperty( button, PROP_IMAGE, button.getImage() );
     preserveProperty( button, PROP_SELECTION, Boolean.valueOf( button.getSelection() ) );
     preserveProperty( button, PROP_GRAYED, Boolean.valueOf( button.getGrayed() ) );
@@ -80,6 +82,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     ControlLCAUtil.renderChanges( button );
     WidgetLCAUtil.renderCustomVariant( button );
     renderText( button );
+    renderProperty( button, PROP_SECONDARY_TEXT, button.getSecondaryText(), "" );
     renderMnemonicIndex( button );
     renderProperty( button, PROP_IMAGE, button.getImage(), null );
     renderProperty( button, PROP_ALIGNMENT, getAlignment( button ), DEFAULT_ALIGNMENT );
