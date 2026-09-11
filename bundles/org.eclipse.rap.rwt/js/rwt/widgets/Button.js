@@ -148,9 +148,10 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._updateDropDownCell();
     },
 
-    // overwritten: l'aria della freccetta cambia lato con la direzione delle celle
+    // overwritten: con la direzione cambiano l'aria della freccetta e dove sta il contenuto
     _applyVertical : function( value, old ) {
       this.base( arguments, value, old );
+      this._updateChildrenAlign();
       this._updateDropDownCell();
     },
 
@@ -315,10 +316,24 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       if( this.hasState( "rwt_ARROW" ) ) {
         this.removeState( "rwt_" + this._alignment.toUpperCase() );
         this.addState( "rwt_" + value.toUpperCase() );
+        this._alignment = value;
       } else {
-        this.setHorizontalChildrenAlign( value );
+        this._alignment = value;
+        this._updateChildrenAlign();
       }
-      this._alignment = value;
+    },
+
+    /*
+     * Dove sta il contenuto nella direzione in cui NON si susseguono le celle.
+     *
+     * In fila e' l'allineamento chiesto dal programma, che e' quello che ha sempre voluto dire:
+     * testo a sinistra, al centro o a destra. In colonna quello stesso allineamento diventa la
+     * posizione della PILA, e una pila di icona e testo appoggiata a sinistra si legge storta: li'
+     * si centra sempre, come fa l'appearance di un item di toolbar incolonnato. L'allineamento
+     * chiesto non si perde - torna a valere appena il pulsante torna in fila.
+     */
+    _updateChildrenAlign : function() {
+      this.setHorizontalChildrenAlign( this.getVertical() ? "center" : this._alignment );
     },
 
     setWrap : function( value ) {

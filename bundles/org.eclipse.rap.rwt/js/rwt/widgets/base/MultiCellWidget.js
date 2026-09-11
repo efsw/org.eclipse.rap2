@@ -527,13 +527,16 @@ rwt.qx.Class.define( "rwt.widgets.base.MultiCellWidget", {
 
     /*
      * La cella flessibile ha due mestieri, e quale sia dipende dalla direzione delle celle: nella
-     * direzione in cui si susseguono prende lo spazio che le altre le lasciano, nell'altra non c'e'
-     * niente da spartire. In fila e' la larghezza a spartirsi, in colonna l'altezza.
+     * direzione in cui si susseguono prende lo spazio che le altre le lasciano, nell'altra si limita
+     * a non sfondare. In fila e' la larghezza a spartirsi, in colonna l'altezza.
      */
     _adjustCellWidth : function( cell, preferredCellWidth ) {
       var inner = this._getAvailableInnerWidth();
-      return this.getVertical() ? this._limitFlexibleCell( preferredCellWidth, inner )
-                                : this._shareFlexibleCell( preferredCellWidth, inner );
+      if( !this.getVertical() ) {
+        return this._shareFlexibleCell( preferredCellWidth, inner );
+      }
+      // il testo che non ci sta in larghezza finisce con i puntini: stringere e' sempre giusto
+      return Math.min( preferredCellWidth, inner );
     },
 
     _getContentSizeFlowDir : function( hint ) {
@@ -575,8 +578,18 @@ rwt.qx.Class.define( "rwt.widgets.base.MultiCellWidget", {
 
     _adjustCellHeight : function( cell, preferredCellHeight ) {
       var inner = this.getInnerHeight();
-      return this.getVertical() ? this._shareFlexibleCell( preferredCellHeight, inner )
-                                : this._limitFlexibleCell( preferredCellHeight, inner );
+      if( this.getVertical() ) {
+        return this._shareFlexibleCell( preferredCellHeight, inner );
+      }
+      /*
+       * Stringere l'ALTEZZA e' un altro paio di maniche: taglia le lettere a meta', non le
+       * accorcia, quindi ha senso solo quando il testo va a capo - li' l'altezza dipende davvero
+       * dallo spazio e una riga in piu' finirebbe oltre il bordo. Su una riga sola l'altezza e'
+       * quella che il font chiede, e la cella e' centrata, quindi il poco che sborda resta
+       * leggibile. Misurato su un pulsante alto 25 con font 11: cella alta 11 per un testo che ne
+       * chiede 15, con i gambi delle lettere tagliati.
+       */
+      return this.getWordWrap() ? Math.min( preferredCellHeight, inner ) : preferredCellHeight;
     },
 
     /*
@@ -591,22 +604,7 @@ rwt.qx.Class.define( "rwt.widgets.base.MultiCellWidget", {
       return ( preferred > max || this._expandFlexCell ) ? max : preferred;
     },
 
-    /*
-     * Nell'altra direzione non c'e' niente da spartire, e si stringe solo quando il testo VA A
-     * CAPO: li' la misura dipende davvero dallo spazio, e una riga in piu' finirebbe oltre il
-     * bordo. Su una riga sola l'altezza e' quella che il font chiede, e stringerla taglia le
-     * lettere invece di guadagnare qualcosa - la cella e' centrata, quindi il poco che sborda resta
-     * leggibile. Misurato su un pulsante alto 25 con font 11: cella alta 11 per un testo che ne
-     * chiede 15, con i gambi delle lettere tagliati.
-     */
-    _limitFlexibleCell : function( preferred, inner ) {
-      if( !this.getWordWrap() ) {
-        return preferred;
-      }
-      return preferred > inner ? inner : preferred;
-    },
-
-    cellIsDisplayable : function( cell ) {
+cellIsDisplayable : function( cell ) {
       return this._flexibleCell === cell || ( this.getCellWidth( cell ) > 0 );
     },
 
