@@ -61,6 +61,14 @@
     <property name="text-decoration"
         description="Decoration for button text." />
 
+    <property name="text-overflow">
+      <description>
+        What happens to the button's text when there is not enough room for it. The text is the part
+        that gives way - the image, the secondary text and the drop down arrow keep their place - so
+        this says how the text ends: cut, or with an ellipsis.
+      </description>
+    </property>
+
     <property name="animation">
       <description>
         Supports animations-types "hoverIn" and "hoverOut". Others are ignored.

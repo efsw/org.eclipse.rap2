@@ -48,6 +48,13 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
        this.setAriaRole( "button" );
     }
     this.initTabIndex();
+    /*
+     * La cella del TESTO e' quella flessibile: quando lo spazio non basta cede lei - il testo si
+     * accorcia - e immagine, secondo testo e freccetta restano al loro posto. Senza dichiararlo
+     * (prima lo faceva solo setWrap) le celle finiscono oltre il bordo e si perde l'ULTIMA, cioe'
+     * proprio la freccetta del menu.
+     */
+    this.setFlexibleCell( 2 );
     this._rawText = null;
     this._iconShape = null;
     this._iconShapeSize = 0;

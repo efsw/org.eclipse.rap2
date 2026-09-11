@@ -137,6 +137,7 @@ Composite[BORDER] {
 
 Button {
   font: 14px Verdana, "Lucida Sans", Arial, Helvetica, sans-serif;
+  text-overflow: clip;
   background-image: none;
   background-repeat: repeat;
   background-position: left top;

@@ -32,6 +32,8 @@ var appearances = {
         result.font = decoratedFont;
       }
       result.textColor = tv.getCssColor( "Button", "color" );
+      // come si tronca il testo quando lo spazio non basta: la cella del testo e' la flessibile
+      result.textOverflow = tv.getCssIdentifier( "Button", "text-overflow" );
       // il secondo testo ha colore e font suoi, e seguono gli stati del pulsante
       result.secondaryTextColor = tv.getCssColor( "Button-SecondaryText", "color" );
       result.secondaryFont = tv.getCssFont( "Button-SecondaryText", "font" );
