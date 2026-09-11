@@ -577,6 +577,16 @@ rwt.qx.Class.define( "rwt.widgets.base.MultiCellWidget", {
     },
 
     _adjustCellHeight : function( cell, preferredCellHeight ) {
+      /*
+       * Si stringe solo quando il testo VA A CAPO: li' l'altezza dipende davvero dallo spazio, e
+       * una riga in piu' finirebbe oltre il bordo. Su una riga sola l'altezza e' quella che il font
+       * chiede, e stringerla taglia le lettere invece di guadagnare qualcosa - la cella e' centrata
+       * nell'altezza, quindi il poco che sborda resta leggibile. Misurato su un pulsante alto 25 con
+       * font 11: cella alta 11 per un testo che ne chiede 15, con i gambi delle lettere tagliati.
+       */
+      if( !this.getWordWrap() ) {
+        return preferredCellHeight;
+      }
       var inner = this.getInnerHeight();
       var result;
       if( preferredCellHeight > inner ) {
