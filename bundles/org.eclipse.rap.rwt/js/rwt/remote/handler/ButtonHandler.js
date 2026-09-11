@@ -90,6 +90,14 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
      */
     "dropDown",
     /**
+     * @name setVertical
+     * @methodOf Button#
+     * @description Stacks the button's cells - image on top, text below - instead of putting them
+     * in a row. It is the layout a tool item has in a toolbar without the RIGHT style.
+     * @param {boolean} vertical true to stack the cells
+     */
+    "vertical",
+    /**
      * @name setSelection
      * @methodOf Button#
      * @description Sets the selection state of the receiver, if it is of type <code>CHECK</code>,

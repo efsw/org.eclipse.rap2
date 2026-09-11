@@ -148,19 +148,41 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._updateDropDownCell();
     },
 
+    // overwritten: l'aria della freccetta cambia lato con la direzione delle celle
+    _applyVertical : function( value, old ) {
+      this.base( arguments, value, old );
+      this._updateDropDownCell();
+    },
+
+    /*
+     * Il lato a cui si appoggia il disegno della freccetta: quello dove il pulsante finisce. Il
+     * vuoto della spaziatura resta dalla parte opposta - verso il testo - ed e' li' che passa il
+     * filo della zona.
+     */
+    _dropDownIconPosition : function() {
+      if( this.getVertical() ) {
+        return "center bottom";
+      }
+      return this.getDirection() === "rtl" ? "left center" : "right center";
+    },
+
     _updateDropDownCell : function() {
       var icon = this._dropDown ? this.getDropDownIcon() : null;
       var url = icon ? icon[ 0 ] : null;
       /*
-       * La cella e' piu' larga dell'immagine: immagine piu' la spaziatura dichiarata dal tema. Il
-       * vuoto resta a sinistra - l'immagine si appoggia al bordo destro - ed e' quello che da' aria
-       * fra il testo e il filo della zona. Il server somma la stessa cosa in computeSize.
+       * La cella e' piu' grande dell'immagine: immagine piu' la spaziatura dichiarata dal tema. Il
+       * vuoto resta dalla parte del testo - a sinistra quando le celle sono in fila, sopra quando
+       * sono in colonna - ed e' quello che da' aria fra il testo e il filo della zona. Il server
+       * somma la stessa cosa in computeSize.
        */
       var spacing = this.getDropDownSpacing();
+      var vertical = this.getVertical();
       if( this.getCellContent( 4 ) !== url ) {
         this.setCellContent( 4, url );
       }
-      this.setCellDimension( 4, icon ? icon[ 1 ] + spacing : 0, icon ? icon[ 2 ] : 0 );
+      this.setCellDimension( 4,
+                             icon ? icon[ 1 ] + ( vertical ? 0 : spacing ) : 0,
+                             icon ? icon[ 2 ] + ( vertical ? spacing : 0 ) : 0 );
       this._updateDropDownZone();
     },
 
@@ -186,24 +208,35 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       cell.style.pointerEvents = "none";
       // l'immagine appoggiata al lato dove finisce il pulsante: il vuoto della spaziatura sta
       // dall'altra parte, dove passa il filo
-      cell.style.backgroundPosition = this.getDirection() === "rtl" ? "left center" : "right center";
+      cell.style.backgroundPosition = this._dropDownIconPosition();
       if( !node ) {
         node = document.createElement( "div" );
-        node.className = "rwt-button-dropdown-zone";
         this.$dropDownZone = node;
         this.$el.append( node );
       }
       /*
        * La zona comincia dove comincia la CELLA della freccetta, non prima: la cella si porta
-       * dentro la propria aria - e' larga immagine piu' spaziatura, con l'immagine appoggiata al
-       * bordo esterno - quindi il filo cade in quel vuoto. Sottraendo anche la spaziatura del
-       * widget, com'era prima, il filo finiva attaccato all'ultima lettera del testo.
+       * dentro la propria aria - immagine piu' spaziatura, con l'immagine appoggiata al bordo
+       * esterno - quindi il filo cade in quel vuoto. Sottraendo anche la spaziatura del widget,
+       * com'era prima, il filo finiva attaccato all'ultima lettera del testo.
+       *
+       * In colonna la zona e' una fascia in fondo invece che una striscia di lato, e il filo passa
+       * sopra: la classe in piu' serve al foglio css puro per spostare il bordo.
        */
-      var left = parseInt( cell.style.left, 10 );
-      var rtl = this.getDirection() === "rtl";
-      node.style.cssText =   "position:absolute;top:0;bottom:0;z-index:-1;display:block;"
-                           + ( rtl ? "left:0;right:" : "right:0;left:" )
-                           + ( isNaN( left ) ? 0 : Math.max( 0, left ) ) + "px";
+      var vertical = this.getVertical();
+      node.className = "rwt-button-dropdown-zone"
+                     + ( vertical ? " rwt-button-dropdown-zone-vertical" : "" );
+      if( vertical ) {
+        var top = parseInt( cell.style.top, 10 );
+        node.style.cssText =   "position:absolute;left:0;right:0;bottom:0;z-index:-1;display:block;"
+                             + "top:" + ( isNaN( top ) ? 0 : Math.max( 0, top ) ) + "px";
+      } else {
+        var left = parseInt( cell.style.left, 10 );
+        var rtl = this.getDirection() === "rtl";
+        node.style.cssText =   "position:absolute;top:0;bottom:0;z-index:-1;display:block;"
+                             + ( rtl ? "left:0;right:" : "right:0;left:" )
+                             + ( isNaN( left ) ? 0 : Math.max( 0, left ) ) + "px";
+      }
     },
 
     _isOverDropDown : function( event ) {
@@ -212,6 +245,9 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
         return false;
       }
       var box = node.getBoundingClientRect();
+      if( this.getVertical() ) {
+        return event.getClientY() >= box.top && event.getClientY() <= box.bottom;
+      }
       return event.getClientX() >= box.left && event.getClientX() <= box.right;
     },
 
@@ -455,7 +491,7 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       if( mask == null || node == null || url == null ) {
         return;
       }
-      var position = this.getDirection() === "rtl" ? "left center" : "right center";
+      var position = this._dropDownIconPosition();
       node.style.backgroundImage = "none";
       node.style.backgroundColor = this.getTextColor() || "";
       node.style[ mask + "Image" ] = "url(" + url + ")";
