@@ -55,7 +55,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   private static final String PROP_IMAGE = "image";
   private static final String PROP_ICON_SHAPE = "iconShape";
   private static final String PROP_DROP_DOWN = "dropDown";
-  private static final String PROP_VERTICAL = "vertical";
+  private static final String PROP_IMAGE_ON_TOP = "imageOnTop";
   private static final String PROP_SELECTION = "selection";
   private static final String PROP_GRAYED = "grayed";
   private static final String PROP_ALIGNMENT = "alignment";
@@ -73,7 +73,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     preserveProperty( button, PROP_IMAGE, button.getImage() );
     preserveProperty( button, PROP_ICON_SHAPE, getIconShape( button ) );
     preserveProperty( button, PROP_DROP_DOWN, Boolean.valueOf( button.getDropDown() ) );
-    preserveProperty( button, PROP_VERTICAL, Boolean.valueOf( button.getVertical() ) );
+    preserveProperty( button, PROP_IMAGE_ON_TOP, Boolean.valueOf( button.getImageOnTop() ) );
     preserveProperty( button, PROP_SELECTION, Boolean.valueOf( button.getSelection() ) );
     preserveProperty( button, PROP_GRAYED, Boolean.valueOf( button.getGrayed() ) );
     preserveProperty( button, PROP_ALIGNMENT, getAlignment( button ) );
@@ -101,7 +101,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     renderProperty( button, PROP_IMAGE, button.getImage(), null );
     renderProperty( button, PROP_ICON_SHAPE, getIconShape( button ), null );
     renderProperty( button, PROP_DROP_DOWN, button.getDropDown(), false );
-    renderProperty( button, PROP_VERTICAL, button.getVertical(), false );
+    renderProperty( button, PROP_IMAGE_ON_TOP, button.getImageOnTop(), false );
     renderProperty( button, PROP_ALIGNMENT, getAlignment( button ), DEFAULT_ALIGNMENT );
     renderProperty( button, PROP_SELECTION, button.getSelection(), false );
     renderProperty( button, PROP_GRAYED, button.getGrayed(), false );

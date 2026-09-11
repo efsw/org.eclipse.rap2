@@ -67,7 +67,7 @@ public class Button extends Control {
   private String text = "";
   private String secondaryText = "";
   private boolean dropDown;
-  private boolean vertical;
+  private boolean imageOnTop;
   private String iconShape = "";
   private int iconShapeSize;
   private Font secondaryFont;
@@ -281,47 +281,51 @@ public class Button extends Control {
   }
 
   /**
-   * Lays the button's content out in a <b>column</b> instead of a row: the image on top and the
-   * text below it.
+   * Puts the image on a <b>line of its own</b>, above the row that carries everything else.
    * <p>
-   * It is what a tool item does in a toolbar without the <code>SWT.RIGHT</code> style, and there it
-   * comes from the parent's style bits - fixed when the toolbar is created. A button has no such
+   * It is the shape of a command in a large toolbar - the icon on top and the label under it - and
+   * it is what a tool item gets in a toolbar without the <code>SWT.RIGHT</code> style. There it
+   * comes from the parent's style bits, fixed when the toolbar is created; a button has no such
    * style, so it is a property of its own and can be changed at any time.
    * </p>
    * <p>
-   * Every cell follows: the image, the text, the secondary text and the drop down arrow are stacked
-   * in that order, and <code>computeSize</code> adds the heights instead of the widths. The arrow's
-   * own room moves with it - above the arrow instead of at its left - because that is where the
-   * separator of its zone runs.
+   * Only the image leaves the row: the text, the secondary text and the drop down arrow stay
+   * together on the line below, which is how they are meant to be read. The shape set with
+   * {@link #setIconShape(String, int)} goes up with the image - it is the same cell.
+   * </p>
+   * <p>
+   * <code>computeSize</code> follows: the width is the wider of the row and the image, the height
+   * is the image plus the spacing plus the row. With no image there is nothing to lift, and the
+   * button is measured and laid out as a plain row.
    * </p>
    *
-   * @param vertical true to stack the cells, false to put them in a row
+   * @param imageOnTop true to lift the image onto a line of its own
    *
    * @exception SWTException <ul>
    *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
    *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
    * </ul>
    */
-  public void setVertical( boolean vertical ) {
+  public void setImageOnTop( boolean imageOnTop ) {
     checkWidget();
-    this.vertical = vertical;
+    this.imageOnTop = imageOnTop;
   }
 
   /**
-   * Returns whether the button's content is laid out in a column.
+   * Returns whether the image is on a line of its own.
    *
-   * @return true if the cells are stacked
+   * @return true if the image is above the row
    *
    * @exception SWTException <ul>
    *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
    *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
    * </ul>
    *
-   * @see #setVertical(boolean)
+   * @see #setImageOnTop(boolean)
    */
-  public boolean getVertical() {
+  public boolean getImageOnTop() {
     checkWidget();
-    return vertical;
+    return imageOnTop;
   }
 
   /**
@@ -703,35 +707,36 @@ public class Button extends Control {
       boolean hasText = text.length() > 0;
       Font font = getFont();
       /*
-       * Le celle entrano una a una, ognuna con lo stacco che la precede, e il modo di combinarle lo
-       * decide la direzione: in fila le larghezze si sommano e vince l'altezza maggiore, in colonna
-       * il contrario. E' la stessa disposizione che fa il client, e le due misure devono coincidere.
+       * La FILA: le celle entrano una a una, ognuna con lo stacco che la precede, le larghezze si
+       * sommano e vince l'altezza maggiore. E' la misura di sempre, e il client dispone la fila
+       * allo stesso modo.
+       *
+       * L'immagine ne fa parte solo quando NON va in cima: quando ci va, esce dalla fila ed entra
+       * da sola nel conto finale - una riga tutta sua.
        */
+      int imageWidth = hasImage ? image.getBounds().width : hasShape ? iconShapeSize : 0;
+      int imageHeight = hasImage ? image.getBounds().height : hasShape ? iconShapeSize : 0;
+      boolean liftImage = imageOnTop && imageWidth > 0;
       int[] cells = new int[ 3 ];
       int pending = 0;
       if( ( style & ( SWT.CHECK | SWT.RADIO ) ) != 0 ) {
         Size checkSize = themeAdapter.getCheckSize( this );
-        addCell( cells, vertical, checkSize.width, checkSize.height, 0 );
+        addCell( cells, checkSize.width, checkSize.height, 0 );
         pending = themeAdapter.getCheckSpacing( this );
       }
-      if( hasImage ) {
-        Rectangle imageBounds = image.getBounds();
-        addCell( cells, vertical, imageBounds.width, imageBounds.height, pending );
-        pending = themeAdapter.getSpacing( this );
-      } else if( hasShape ) {
-        addCell( cells, vertical, iconShapeSize, iconShapeSize, pending );
+      if( imageWidth > 0 && !liftImage ) {
+        addCell( cells, imageWidth, imageHeight, pending );
         pending = themeAdapter.getSpacing( this );
       }
       if( hasText ) {
         boolean markupEnabled = isMarkupEnabledFor( this );
         int wrapWidth = SWT.DEFAULT;
         if( ( style & SWT.WRAP ) != 0 && wHint != SWT.DEFAULT ) {
-          // in colonna il testo ha tutta la larghezza: davanti a lui non c'e' nessuna cella
-          int taken = vertical ? 0 : cells[ 0 ] + ( cells[ 2 ] > 0 ? pending : 0 );
+          int taken = cells[ 0 ] + ( cells[ 2 ] > 0 ? pending : 0 );
           wrapWidth = wHint - taken - ( padding.left + padding.right );
         }
         Point extent = textExtent( font, text, wrapWidth, markupEnabled );
-        addCell( cells, vertical, extent.x, extent.y, pending );
+        addCell( cells, extent.x, extent.y, pending );
       }
       /*
        * Il secondo testo entra nella misura, e con il SUO font: il peso e la dimensione li da'
@@ -752,7 +757,7 @@ public class Button extends Control {
                                    secondaryText,
                                    SWT.DEFAULT,
                                    isMarkupEnabledFor( this ) );
-        addCell( cells, vertical, extent.x, extent.y, themeAdapter.getSecondaryTextSpacing( this ) );
+        addCell( cells, extent.x, extent.y, themeAdapter.getSecondaryTextSpacing( this ) );
       }
       /*
        * La freccetta del menu: si misura come la spunta di un check - dimensione dal tema piu' lo
@@ -762,22 +767,21 @@ public class Button extends Control {
       if( dropDown ) {
         Size dropDownSize = themeAdapter.getDropDownIconSize( this );
         if( dropDownSize.width > 0 ) {
-          /*
-           * La cella della freccetta si porta dentro la propria aria, e sta dal lato da cui arriva
-           * il resto del pulsante: a sinistra quando le celle sono in fila, sopra quando sono in
-           * colonna. E' li' che passa il filo della zona, e il client la dimensiona allo stesso
-           * modo.
-           */
-          int room = themeAdapter.getDropDownIconSpacing( this );
+          // la cella della freccetta e' larga come l'immagine piu' la sua spaziatura: il vuoto sta
+          // a sinistra, dove passa il filo della zona, e il client la dimensiona allo stesso modo
           addCell( cells,
-                   vertical,
-                   dropDownSize.width + ( vertical ? 0 : room ),
-                   dropDownSize.height + ( vertical ? room : 0 ),
+                   dropDownSize.width + themeAdapter.getDropDownIconSpacing( this ),
+                   dropDownSize.height,
                    themeAdapter.getSpacing( this ) );
         }
       }
-      width = vertical ? cells[ 1 ] : cells[ 0 ];
-      height = vertical ? cells[ 0 ] : cells[ 1 ];
+      width = cells[ 0 ];
+      height = cells[ 1 ];
+      if( liftImage ) {
+        // l'immagine e' una riga a se': la larghezza e' la maggiore, l'altezza si somma
+        width = Math.max( width, imageWidth );
+        height = imageHeight + ( cells[ 2 ] > 0 ? themeAdapter.getSpacing( this ) : 0 ) + height;
+      }
       if( height == 0 ) {
         height = getCharHeight( font );
       }
@@ -797,16 +801,16 @@ public class Button extends Control {
   }
 
   /*
-   * Una cella entra nella misura. In "cells" stanno, nell'ordine: quanto misura la sequenza nella
-   * direzione in cui le celle si susseguono, quanto la cella piu' grande nell'altra direzione, e
-   * quante celle ci sono gia' - la prima non ha nessuno stacco davanti a se'.
+   * Una cella entra nella misura della fila. In "cells" stanno, nell'ordine: quanto e' larga la
+   * fila, quanto e' alta la sua cella piu' alta, e quante celle ci sono gia' - la prima non ha
+   * nessuno stacco davanti a se'.
    */
-  private static void addCell( int[] cells, boolean vertical, int width, int height, int gap ) {
+  private static void addCell( int[] cells, int width, int height, int gap ) {
     if( cells[ 2 ] > 0 ) {
       cells[ 0 ] += gap;
     }
-    cells[ 0 ] += vertical ? height : width;
-    cells[ 1 ] = Math.max( cells[ 1 ], vertical ? width : height );
+    cells[ 0 ] += width;
+    cells[ 1 ] = Math.max( cells[ 1 ], height );
     cells[ 2 ]++;
   }
 

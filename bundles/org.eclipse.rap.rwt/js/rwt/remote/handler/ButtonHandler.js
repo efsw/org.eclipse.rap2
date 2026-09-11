@@ -90,13 +90,14 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
      */
     "dropDown",
     /**
-     * @name setVertical
+     * @name setImageOnTop
      * @methodOf Button#
-     * @description Stacks the button's cells - image on top, text below - instead of putting them
-     * in a row. It is the layout a tool item has in a toolbar without the RIGHT style.
-     * @param {boolean} vertical true to stack the cells
+     * @description Puts the image on a line of its own, above the row with the text, the secondary
+     * text and the drop down arrow. It is the layout a tool item has in a toolbar without the
+     * RIGHT style.
+     * @param {boolean} imageOnTop true to lift the image onto its own line
      */
-    "vertical",
+    "imageOnTop",
     /**
      * @name setSelection
      * @methodOf Button#

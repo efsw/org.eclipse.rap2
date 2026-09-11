@@ -70,6 +70,7 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     this._iconShape = null;
     this._iconShapeSize = 0;
     this._dropDown = false;
+    this._imageOnTop = false;
     this._dropDownPressed = false;
     this._rawSecondaryText = null;
     this._mnemonicIndex = null;
@@ -148,42 +149,144 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._updateDropDownCell();
     },
 
-    // overwritten: con la direzione cambiano l'aria della freccetta e dove sta il contenuto
-    _applyVertical : function( value, old ) {
-      this.base( arguments, value, old );
-      this._updateChildrenAlign();
-      this._updateDropDownCell();
+    /**
+     * L'immagine su una <b>riga sua</b>, in cima, e sotto la fila con tutto il resto.
+     * <p>
+     * E' la forma di un comando di barra grossa. La fila resta orizzontale - testo, secondo testo e
+     * freccetta si leggono insieme - e l'unica cella che ne esce e' l'immagine: la posiziona il
+     * pulsante, centrata nella larghezza e appoggiata in cima.
+     * </p>
+     */
+    setImageOnTop : function( value ) {
+      if( this._imageOnTop !== value ) {
+        this._imageOnTop = value;
+        this._invalidatePreferredInnerWidth();
+        this._invalidatePreferredInnerHeight();
+        this._scheduleLayoutX();
+        this._scheduleLayoutY();
+      }
     },
 
     /*
-     * Il lato a cui si appoggia il disegno della freccetta: quello dove il pulsante finisce. Il
-     * vuoto della spaziatura resta dalla parte opposta - verso il testo - ed e' li' che passa il
-     * filo della zona.
+     * Vero quando c'e' davvero qualcosa da mettere in cima: senza immagine (o forma, che sta nella
+     * stessa cella) il pulsante e' una fila e basta, e chiedere l'icona sopra non vuol dire niente.
      */
-    _dropDownIconPosition : function() {
-      if( this.getVertical() ) {
-        return "center bottom";
+    _isImageOnTop : function() {
+      return this._imageOnTop === true && this._cellHasContent( 1 );
+    },
+
+    // overwritten: l'immagine non sta nella fila, quindi non ne occupa il posto
+    cellIsDisplayable : function( cell ) {
+      if( cell === 1 && this._isImageOnTop() ) {
+        return false;
       }
-      return this.getDirection() === "rtl" ? "left center" : "right center";
+      return this.base( arguments, cell );
+    },
+
+    /*
+     * L'altezza della fila: la cella piu' alta fra quelle che ci stanno dentro, cioe' tutte meno
+     * l'immagine.
+     */
+    _rowHeight : function() {
+      var result = 0;
+      for( var i = 0; i < this._CELLORDER.length; i++ ) {
+        if( i !== 1 && this._cellHasContent( i ) ) {
+          result = Math.max( result, this.getCellHeight( i, true ) );
+        }
+      }
+      return result;
+    },
+
+    // overwritten: in cima l'immagine con la sua riga, sotto la fila
+    _getContentSizeOrthogonalDir : function() {
+      if( !this._isImageOnTop() ) {
+        return this.base( arguments );
+      }
+      var row = this._rowHeight();
+      return this.getCellHeight( 1, true ) + ( row > 0 ? this.getSpacing() : 0 ) + row;
+    },
+
+    /*
+     * Overwritten: la larghezza che il pulsante chiede e' la maggiore fra la fila e l'immagine che
+     * le sta sopra. Si scrive qui e non in _getContentSizeFlowDir perche' quello serve anche a
+     * centrare la FILA, e la fila va centrata per quanto e' larga lei.
+     */
+    _computePreferredInnerWidth : function() {
+      var result = this.base( arguments );
+      if( this._isImageOnTop() ) {
+        result = Math.max( result, this.getCellWidth( 1, true ) );
+      }
+      return result;
+    },
+
+    /*
+     * Overwritten: la fila la dispone il motore di sempre - l'immagine non ne fa parte - e qui
+     * resta da centrarla nella larghezza. Si fa nella direzione del flusso perche' e' quella che
+     * viene rifatta quando il pulsante cambia larghezza.
+     */
+    _renderLayoutFlowDir : function() {
+      this.base( arguments );
+      if( this._isImageOnTop() ) {
+        var width = this.getCellWidth( 1, true );
+        var left = Math.round( this.getPaddingLeft() + ( this._getAvailableInnerWidth() - width ) / 2 );
+        this.$cells[ 1 ].css( this.getDirection() === "rtl" ? "right" : "left", Math.max( 0, left ) );
+        this.$cells[ 1 ].css( "width", width );
+      }
+    },
+
+    /*
+     * Overwritten: in altezza le due righe. Il blocco - immagine, stacco, fila - si mette secondo
+     * l'allineamento verticale del pulsante, l'immagine in cima e le celle della fila centrate
+     * nella fascia che resta.
+     */
+    _renderLayoutOrthDir : function() {
+      if( !this._isImageOnTop() ) {
+        this.base( arguments );
+        return;
+      }
+      var imageHeight = this.getCellHeight( 1, true );
+      var rowHeight = this._rowHeight();
+      var gap = rowHeight > 0 ? this.getSpacing() : 0;
+      var top = this._blockTop( imageHeight + gap + rowHeight );
+      this.$cells[ 1 ].css( "top", top );
+      this.$cells[ 1 ].css( "height", imageHeight );
+      var row = top + imageHeight + gap;
+      for( var i = 0; i < this._CELLORDER.length; i++ ) {
+        if( i !== 1 && this._cellHasContent( i ) ) {
+          var height = this.getCellHeight( i );
+          this.$cells[ i ].css( "top", Math.round( row + ( rowHeight - height ) / 2 ) );
+          this.$cells[ i ].css( "height", height );
+        }
+      }
+    },
+
+    // dove comincia il blocco delle due righe, secondo l'allineamento verticale del pulsante
+    _blockTop : function( content ) {
+      var padding = this.getPaddingTop();
+      var inner = this.getInnerHeight();
+      switch( this.getVerticalChildrenAlign() ) {
+        case "top":
+          return padding;
+        case "bottom":
+          return padding + inner - content;
+        default:
+          return Math.round( padding + inner / 2 - content / 2 );
+      }
     },
 
     _updateDropDownCell : function() {
       var icon = this._dropDown ? this.getDropDownIcon() : null;
       var url = icon ? icon[ 0 ] : null;
       /*
-       * La cella e' piu' grande dell'immagine: immagine piu' la spaziatura dichiarata dal tema. Il
-       * vuoto resta dalla parte del testo - a sinistra quando le celle sono in fila, sopra quando
-       * sono in colonna - ed e' quello che da' aria fra il testo e il filo della zona. Il server
-       * somma la stessa cosa in computeSize.
+       * La cella e' piu' larga dell'immagine: immagine piu' la spaziatura dichiarata dal tema. Il
+       * vuoto resta a sinistra - l'immagine si appoggia al bordo destro - ed e' quello che da' aria
+       * fra il testo e il filo della zona. Il server somma la stessa cosa in computeSize.
        */
       var spacing = this.getDropDownSpacing();
-      var vertical = this.getVertical();
       if( this.getCellContent( 4 ) !== url ) {
         this.setCellContent( 4, url );
       }
-      this.setCellDimension( 4,
-                             icon ? icon[ 1 ] + ( vertical ? 0 : spacing ) : 0,
-                             icon ? icon[ 2 ] + ( vertical ? spacing : 0 ) : 0 );
+      this.setCellDimension( 4, icon ? icon[ 1 ] + spacing : 0, icon ? icon[ 2 ] : 0 );
       this._updateDropDownZone();
     },
 
@@ -209,35 +312,24 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       cell.style.pointerEvents = "none";
       // l'immagine appoggiata al lato dove finisce il pulsante: il vuoto della spaziatura sta
       // dall'altra parte, dove passa il filo
-      cell.style.backgroundPosition = this._dropDownIconPosition();
+      cell.style.backgroundPosition = this.getDirection() === "rtl" ? "left center" : "right center";
       if( !node ) {
         node = document.createElement( "div" );
+        node.className = "rwt-button-dropdown-zone";
         this.$dropDownZone = node;
         this.$el.append( node );
       }
       /*
        * La zona comincia dove comincia la CELLA della freccetta, non prima: la cella si porta
-       * dentro la propria aria - immagine piu' spaziatura, con l'immagine appoggiata al bordo
-       * esterno - quindi il filo cade in quel vuoto. Sottraendo anche la spaziatura del widget,
-       * com'era prima, il filo finiva attaccato all'ultima lettera del testo.
-       *
-       * In colonna la zona e' una fascia in fondo invece che una striscia di lato, e il filo passa
-       * sopra: la classe in piu' serve al foglio css puro per spostare il bordo.
+       * dentro la propria aria - e' larga immagine piu' spaziatura, con l'immagine appoggiata al
+       * bordo esterno - quindi il filo cade in quel vuoto. Sottraendo anche la spaziatura del
+       * widget, com'era prima, il filo finiva attaccato all'ultima lettera del testo.
        */
-      var vertical = this.getVertical();
-      node.className = "rwt-button-dropdown-zone"
-                     + ( vertical ? " rwt-button-dropdown-zone-vertical" : "" );
-      if( vertical ) {
-        var top = parseInt( cell.style.top, 10 );
-        node.style.cssText =   "position:absolute;left:0;right:0;bottom:0;z-index:-1;display:block;"
-                             + "top:" + ( isNaN( top ) ? 0 : Math.max( 0, top ) ) + "px";
-      } else {
-        var left = parseInt( cell.style.left, 10 );
-        var rtl = this.getDirection() === "rtl";
-        node.style.cssText =   "position:absolute;top:0;bottom:0;z-index:-1;display:block;"
-                             + ( rtl ? "left:0;right:" : "right:0;left:" )
-                             + ( isNaN( left ) ? 0 : Math.max( 0, left ) ) + "px";
-      }
+      var left = parseInt( cell.style.left, 10 );
+      var rtl = this.getDirection() === "rtl";
+      node.style.cssText =   "position:absolute;top:0;bottom:0;z-index:-1;display:block;"
+                           + ( rtl ? "left:0;right:" : "right:0;left:" )
+                           + ( isNaN( left ) ? 0 : Math.max( 0, left ) ) + "px";
     },
 
     _isOverDropDown : function( event ) {
@@ -246,9 +338,6 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
         return false;
       }
       var box = node.getBoundingClientRect();
-      if( this.getVertical() ) {
-        return event.getClientY() >= box.top && event.getClientY() <= box.bottom;
-      }
       return event.getClientX() >= box.left && event.getClientX() <= box.right;
     },
 
@@ -316,24 +405,10 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       if( this.hasState( "rwt_ARROW" ) ) {
         this.removeState( "rwt_" + this._alignment.toUpperCase() );
         this.addState( "rwt_" + value.toUpperCase() );
-        this._alignment = value;
       } else {
-        this._alignment = value;
-        this._updateChildrenAlign();
+        this.setHorizontalChildrenAlign( value );
       }
-    },
-
-    /*
-     * Dove sta il contenuto nella direzione in cui NON si susseguono le celle.
-     *
-     * In fila e' l'allineamento chiesto dal programma, che e' quello che ha sempre voluto dire:
-     * testo a sinistra, al centro o a destra. In colonna quello stesso allineamento diventa la
-     * posizione della PILA, e una pila di icona e testo appoggiata a sinistra si legge storta: li'
-     * si centra sempre, come fa l'appearance di un item di toolbar incolonnato. L'allineamento
-     * chiesto non si perde - torna a valere appena il pulsante torna in fila.
-     */
-    _updateChildrenAlign : function() {
-      this.setHorizontalChildrenAlign( this.getVertical() ? "center" : this._alignment );
+      this._alignment = value;
     },
 
     setWrap : function( value ) {
@@ -506,7 +581,7 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       if( mask == null || node == null || url == null ) {
         return;
       }
-      var position = this._dropDownIconPosition();
+      var position = this.getDirection() === "rtl" ? "left center" : "right center";
       node.style.backgroundImage = "none";
       node.style.backgroundColor = this.getTextColor() || "";
       node.style[ mask + "Image" ] = "url(" + url + ")";
