@@ -176,14 +176,19 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     },
 
     /*
-     * Con l'icona sopra la freccetta del menu non sta nella fila: sta a destra di TUTTO, centrata
-     * nell'altezza, perche' la sua zona e' alta quanto il pulsante ed e' li' che va letta. Lasciata
-     * nella fila darebbe due difetti insieme: la fila sarebbe larga anche di lei - e l'icona,
-     * centrata su tutta la larghezza, risulterebbe spostata a destra rispetto al testo - e la
-     * freccetta starebbe in mezzo alla fila, cioe' in basso.
+     * La freccetta del menu non sta nella fila: sta in fondo al pulsante, dal lato dove il pulsante
+     * finisce, e centrata nell'altezza - come in un item di toolbar col menu, dove la freccetta e il
+     * suo filo stanno al bordo e il resto vive nello spazio che avanza.
+     *
+     * Lasciata nella fila si sposta col testo, e su un pulsante piu' largo del suo contenuto - in
+     * una barra che li allarga tutti uguali, per esempio - finisce in mezzo con la sua zona larga
+     * quanto tutto quello che avanza: il segno "qui si apre un menu" cambierebbe dimensione da un
+     * pulsante all'altro. Con l'icona sopra darebbe anche un secondo difetto, perche' la fila
+     * sarebbe larga anche di lei e l'icona, centrata su quella larghezza, verrebbe spostata di lato
+     * rispetto al testo.
      */
     _isArrowAside : function() {
-      return this._isImageOnTop() && this._dropDown && this._cellHasContent( 4 );
+      return this._dropDown && this._cellHasContent( 4 );
     },
 
     // overwritten: quello che esce dalla fila non ne occupa il posto

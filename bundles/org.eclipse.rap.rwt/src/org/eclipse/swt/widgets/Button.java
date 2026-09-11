@@ -771,8 +771,8 @@ public class Button extends Control {
        * vuoto sta a sinistra, dove passa il filo della zona, e il client la dimensiona allo stesso
        * modo.
        *
-       * Con l'icona sopra pero' la freccetta esce dalla fila: sta a destra di tutto e centrata
-       * nell'altezza, come in un item di toolbar col menu, quindi entra nel conto piu' avanti.
+       * La freccetta non entra nella fila: sta in fondo al pulsante e centrata nell'altezza, come
+       * in un item di toolbar col menu, quindi entra nel conto alla fine.
        */
       int arrowWidth = 0;
       int arrowHeight = 0;
@@ -783,19 +783,17 @@ public class Button extends Control {
           arrowHeight = dropDownSize.height;
         }
       }
-      if( arrowWidth > 0 && !liftImage ) {
-        addCell( cells, arrowWidth, arrowHeight, themeAdapter.getSpacing( this ) );
-      }
       width = cells[ 0 ];
       height = cells[ 1 ];
       if( liftImage ) {
         // l'immagine e' una riga a se': la larghezza e' la maggiore, l'altezza si somma
         width = Math.max( width, imageWidth );
         height = imageHeight + ( cells[ 2 ] > 0 ? themeAdapter.getSpacing( this ) : 0 ) + height;
-        if( arrowWidth > 0 ) {
-          width += themeAdapter.getSpacing( this ) + arrowWidth;
-          height = Math.max( height, arrowHeight );
-        }
+      }
+      if( arrowWidth > 0 ) {
+        // e la freccetta si aggiunge a tutto, perche' sta in fondo al pulsante e non nella fila
+        width += ( cells[ 2 ] > 0 || liftImage ? themeAdapter.getSpacing( this ) : 0 ) + arrowWidth;
+        height = Math.max( height, arrowHeight );
       }
       if( height == 0 ) {
         height = getCharHeight( font );
