@@ -83,6 +83,13 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
      */
     "iconShape",
     /**
+     * @name setDropDown
+     * @methodOf Button#
+     * @description Shows or hides the arrow that says a menu opens from this button.
+     * @param {boolean} dropDown true to show the arrow
+     */
+    "dropDown",
+    /**
      * @name setSelection
      * @methodOf Button#
      * @description Sets the selection state of the receiver, if it is of type <code>CHECK</code>,

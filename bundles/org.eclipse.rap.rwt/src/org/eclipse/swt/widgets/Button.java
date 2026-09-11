@@ -34,6 +34,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.widgets.MarkupValidator;
 import org.eclipse.swt.internal.widgets.buttonkit.ButtonLCA;
+import org.eclipse.rap.rwt.internal.theme.Size;
 import org.eclipse.swt.internal.widgets.buttonkit.ButtonThemeAdapter;
 
 
@@ -65,6 +66,7 @@ public class Button extends Control {
 
   private String text = "";
   private String secondaryText = "";
+  private boolean dropDown;
   private String iconShape = "";
   private int iconShapeSize;
   private Font secondaryFont;
@@ -233,6 +235,48 @@ public class Button extends Control {
   public String getSecondaryText() {
     checkWidget();
     return secondaryText;
+  }
+
+  /**
+   * Shows or hides the <b>drop down arrow</b>: the sign that says a menu opens from this button.
+   * <p>
+   * It is what a tool item with a menu shows by itself - there it is the DROP_DOWN style - and a
+   * button has no such style, so it is a cell of its own at the right end. What the arrow looks
+   * like is the theme's business, in the <code>Button-DropDownIcon</code> element: it is the same
+   * sign in every button of an application, not a piece of data.
+   * </p>
+   * <p>
+   * The arrow takes part in <code>computeSize</code> with the size the theme gives it, like the
+   * check of a CHECK button: a button that shows it asks for more width.
+   * </p>
+   *
+   * @param dropDown true to show the arrow
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void setDropDown( boolean dropDown ) {
+    checkWidget();
+    this.dropDown = dropDown;
+  }
+
+  /**
+   * Returns whether the drop down arrow is shown.
+   *
+   * @return true if the arrow is shown
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setDropDown(boolean)
+   */
+  public boolean getDropDown() {
+    checkWidget();
+    return dropDown;
   }
 
   /**
@@ -649,6 +693,21 @@ public class Button extends Control {
        * grassetto e' piu' stretto di quanto sarebbe nel font del pulsante. Senza questa misura la
        * larghezza preferita non basterebbe e il secondo testo verrebbe troncato.
        */
+      /*
+       * La freccetta del menu: si misura come la spunta di un check - dimensione dal tema piu' lo
+       * stacco - perche' e' un segno del widget e non un dato, e quindi la sua dimensione la sa il
+       * tema e non chi usa il pulsante.
+       */
+      if( dropDown ) {
+        Size dropDownSize = themeAdapter.getDropDownIconSize( this );
+        if( dropDownSize.width > 0 ) {
+          if( hasText || hasImage || hasShape ) {
+            width += themeAdapter.getSpacing( this );
+          }
+          width += dropDownSize.width;
+          height = Math.max( height, dropDownSize.height );
+        }
+      }
       if( secondaryText.length() > 0 ) {
         if( hasText || hasImage ) {
           width += themeAdapter.getSecondaryTextSpacing( this );

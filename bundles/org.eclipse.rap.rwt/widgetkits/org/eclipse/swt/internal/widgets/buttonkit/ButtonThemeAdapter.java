@@ -71,6 +71,15 @@ public class ButtonThemeAdapter extends ControlThemeAdapterImpl {
     return ZERO;
   }
 
+  /**
+   * The size of the drop down arrow, zero when the theme draws none.
+   *
+   * @see Button#setDropDown(boolean)
+   */
+  public Size getDropDownIconSize( Button button ) {
+    return getCssImageSize( "Button-DropDownIcon", "background-image", button );
+  }
+
   public Size getArrowSize( Button button ) {
     if( ( button.getStyle() & SWT.ARROW ) != 0) {
       return getCssImageSize( "Button-ArrowIcon", "background-image", button );

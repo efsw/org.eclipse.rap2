@@ -51,6 +51,8 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     this._rawText = null;
     this._iconShape = null;
     this._iconShapeSize = 0;
+    this._dropDown = false;
+    this._dropDownPressed = false;
     this._rawSecondaryText = null;
     this._mnemonicIndex = null;
     this._markupEnabled = false;
@@ -72,6 +74,16 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
      * tema Button-SecondaryText: sono proprieta' e non valori scritti a mano perche' l'appearance
      * si applica per proprieta', e cosi' seguono gli stati del pulsante (disabilitato, hover).
      */
+    /*
+     * La freccetta del menu, dal tema: e' un segno del widget - "qui si apre un menu" - quindi il
+     * server manda solo se mostrarla, e l'immagine la decide il tema.
+     */
+    dropDownIcon : {
+      apply : "_applyDropDownIcon",
+      nullable : true,
+      themeable : true
+    },
+
     secondaryTextColor : {
       apply : "_applySecondaryTextStyle",
       nullable : true,
@@ -98,6 +110,79 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._applyText( false );
       this.dispatchSimpleEvent( "changeText", this ); // used by Synchronizer.js
     },
+
+    /**
+     * Se mostrare la freccetta del menu. Il disegno arriva dall'appearance.
+     */
+    setDropDown : function( value ) {
+      this._dropDown = value;
+      this._updateDropDownCell();
+    },
+
+    _applyDropDownIcon : function() {
+      this._updateDropDownCell();
+    },
+
+    _updateDropDownCell : function() {
+      var icon = this._dropDown ? this.getDropDownIcon() : null;
+      var url = icon ? icon[ 0 ] : null;
+      if( this.getCellContent( 4 ) !== url ) {
+        this.setCellContent( 4, url );
+        this.setCellDimension( 4, icon ? icon[ 1 ] : 0, icon ? icon[ 2 ] : 0 );
+      }
+      this._updateDropDownZone();
+    },
+
+    /*
+     * La ZONA della freccetta: un elemento nostro, dietro la cella, a tutta altezza e fino al bordo
+     * destro. Serve a due cose - l'hover proprio e il click che apre il menu - e il suo aspetto lo
+     * dipinge il foglio css puro sul :hover vero del browser, con la classe qui sotto: un'appearance
+     * non sa dipingere un elemento nostro, e "sono sopra la freccetta" non e' uno stato del tema.
+     *
+     * z-index -1 la mette dietro alla freccetta e davanti al fondo del pulsante. La cella della
+     * freccetta perde i pointer-events, altrimenti il puntatore sopra la freccetta starebbe sopra la
+     * CELLA - sorella della zona, non figlia - e la zona non risulterebbe in hover.
+     */
+    _updateDropDownZone : function() {
+      var cell = this.getCellNode( 4 );
+      var node = this.$dropDownZone;
+      if( !this._dropDown || cell == null ) {
+        if( node ) {
+          node.style.display = "none";
+        }
+        return;
+      }
+      cell.style.pointerEvents = "none";
+      if( !node ) {
+        node = document.createElement( "div" );
+        node.className = "rwt-button-dropdown-zone";
+        this.$dropDownZone = node;
+        this.$el.append( node );
+      }
+      var left = parseInt( cell.style.left, 10 );
+      var spacing = this.getSpacing();
+      var rtl = this.getDirection() === "rtl";
+      node.style.cssText =   "position:absolute;top:0;bottom:0;z-index:-1;display:block;"
+                           + ( rtl ? "left:0;right:" : "right:0;left:" )
+                           + ( isNaN( left ) ? 0 : Math.max( 0, left - spacing ) ) + "px";
+    },
+
+    _isOverDropDown : function( event ) {
+      var node = this.$dropDownZone;
+      if( !this._dropDown || node == null || node.style.display === "none" ) {
+        return false;
+      }
+      var box = node.getBoundingClientRect();
+      return event.getClientX() >= box.left && event.getClientX() <= box.right;
+    },
+
+    // overwritten: ricordo se la pressione e' cominciata nella zona della freccetta
+    _onMouseDown : function( event ) {
+      this._dropDownPressed = this._isOverDropDown( event );
+      this.base( arguments, event );
+    },
+
+
 
     /**
      * La forma tinta che sta nel posto dell'immagine.
@@ -306,6 +391,8 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       if( this.getFocused() ) {
          this._showFocusIndicator();
       }
+      // la cella della freccetta ha appena preso la sua posizione: la zona la segue
+      this._updateDropDownZone();
     },
 
     _ontabfocus : function() {
@@ -325,9 +412,17 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       rwt.widgets.util.FocusIndicator.getInstance().hide( this );
     },
 
-    // overwritten:
+    /*
+     * overwritten: un click nella zona della freccetta parte con detail "arrow", come in ToolItem -
+     * il server lo traduce da se' in SWT.ARROW, e chi ascolta la selezione sa distinguere "apri il
+     * menu" da "esegui il comando".
+     */
     _notifySelected : function() {
-      rwt.remote.EventUtil.notifySelected( this );
+      if( this._dropDownPressed ) {
+        rwt.remote.EventUtil.notifySelected( this, 0, 0, 0, 0, "arrow" );
+      } else {
+        rwt.remote.EventUtil.notifySelected( this );
+      }
     }
 
   }
