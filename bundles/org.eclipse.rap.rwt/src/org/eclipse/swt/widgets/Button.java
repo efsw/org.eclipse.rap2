@@ -757,7 +757,12 @@ public class Button extends Control {
                                    secondaryText,
                                    SWT.DEFAULT,
                                    isMarkupEnabledFor( this ) );
-        addCell( cells, extent.x, extent.y, themeAdapter.getSecondaryTextSpacing( this ) );
+        /*
+         * Lo stacco e' quello del pulsante, come fra ogni altra coppia di celle: il client sa
+         * mettere solo quello, e una misura con un numero diverso lascia il testo un pixel corto -
+         * che basta a farlo troncare con i puntini.
+         */
+        addCell( cells, extent.x, extent.y, themeAdapter.getSpacing( this ) );
       }
       /*
        * La freccetta del menu: si misura come la spunta di un check - dimensione dal tema piu' lo

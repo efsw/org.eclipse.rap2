@@ -56,12 +56,7 @@ public class ButtonThemeAdapter extends ControlThemeAdapterImpl {
     return getCssFont( "Button-SecondaryText", "font", button );
   }
 
-  /** The gap between the main text and the secondary one. */
-  public int getSecondaryTextSpacing( Button button ) {
-    return getCssDimension( "Button-SecondaryText", "spacing", button );
-  }
-
-  public Size getCheckSize( Button button ) {
+public Size getCheckSize( Button button ) {
     if( ( button.getStyle() & SWT.RADIO ) != 0) {
       return getCssImageSize( "Button-RadioIcon", "background-image", button );
     }
