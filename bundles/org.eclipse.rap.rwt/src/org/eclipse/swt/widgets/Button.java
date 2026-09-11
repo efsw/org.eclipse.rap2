@@ -762,18 +762,24 @@ public class Button extends Control {
       /*
        * La freccetta del menu: si misura come la spunta di un check - dimensione dal tema piu' lo
        * stacco - perche' e' un segno del widget e non un dato, e quindi la sua dimensione la sa il
-       * tema e non chi usa il pulsante.
+       * tema e non chi usa il pulsante. La cella e' larga come l'immagine piu' la sua spaziatura: il
+       * vuoto sta a sinistra, dove passa il filo della zona, e il client la dimensiona allo stesso
+       * modo.
+       *
+       * Con l'icona sopra pero' la freccetta esce dalla fila: sta a destra di tutto e centrata
+       * nell'altezza, come in un item di toolbar col menu, quindi entra nel conto piu' avanti.
        */
+      int arrowWidth = 0;
+      int arrowHeight = 0;
       if( dropDown ) {
         Size dropDownSize = themeAdapter.getDropDownIconSize( this );
         if( dropDownSize.width > 0 ) {
-          // la cella della freccetta e' larga come l'immagine piu' la sua spaziatura: il vuoto sta
-          // a sinistra, dove passa il filo della zona, e il client la dimensiona allo stesso modo
-          addCell( cells,
-                   dropDownSize.width + themeAdapter.getDropDownIconSpacing( this ),
-                   dropDownSize.height,
-                   themeAdapter.getSpacing( this ) );
+          arrowWidth = dropDownSize.width + themeAdapter.getDropDownIconSpacing( this );
+          arrowHeight = dropDownSize.height;
         }
+      }
+      if( arrowWidth > 0 && !liftImage ) {
+        addCell( cells, arrowWidth, arrowHeight, themeAdapter.getSpacing( this ) );
       }
       width = cells[ 0 ];
       height = cells[ 1 ];
@@ -781,6 +787,10 @@ public class Button extends Control {
         // l'immagine e' una riga a se': la larghezza e' la maggiore, l'altezza si somma
         width = Math.max( width, imageWidth );
         height = imageHeight + ( cells[ 2 ] > 0 ? themeAdapter.getSpacing( this ) : 0 ) + height;
+        if( arrowWidth > 0 ) {
+          width += themeAdapter.getSpacing( this ) + arrowWidth;
+          height = Math.max( height, arrowHeight );
+        }
       }
       if( height == 0 ) {
         height = getCharHeight( font );

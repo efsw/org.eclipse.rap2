@@ -175,35 +175,66 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       return this._imageOnTop === true && this._cellHasContent( 1 );
     },
 
-    // overwritten: l'immagine non sta nella fila, quindi non ne occupa il posto
+    /*
+     * Con l'icona sopra la freccetta del menu non sta nella fila: sta a destra di TUTTO, centrata
+     * nell'altezza, perche' la sua zona e' alta quanto il pulsante ed e' li' che va letta. Lasciata
+     * nella fila darebbe due difetti insieme: la fila sarebbe larga anche di lei - e l'icona,
+     * centrata su tutta la larghezza, risulterebbe spostata a destra rispetto al testo - e la
+     * freccetta starebbe in mezzo alla fila, cioe' in basso.
+     */
+    _isArrowAside : function() {
+      return this._isImageOnTop() && this._dropDown && this._cellHasContent( 4 );
+    },
+
+    // overwritten: quello che esce dalla fila non ne occupa il posto
     cellIsDisplayable : function( cell ) {
       if( cell === 1 && this._isImageOnTop() ) {
+        return false;
+      }
+      if( cell === 4 && this._isArrowAside() ) {
         return false;
       }
       return this.base( arguments, cell );
     },
 
     /*
+     * Overwritten: la larghezza in cui sta il contenuto e' quella del pulsante meno la freccetta,
+     * che se ne sta per conto suo a destra. E' il gancio giusto perche' da qui passano sia la
+     * centratura della fila sia lo spazio che ha il testo prima di troncarsi.
+     */
+    _getAvailableInnerWidth : function() {
+      var result = this.base( arguments );
+      if( this._isArrowAside() ) {
+        result -= this.getCellWidth( 4, true ) + this.getSpacing();
+      }
+      return Math.max( 0, result );
+    },
+
+    /*
      * L'altezza della fila: la cella piu' alta fra quelle che ci stanno dentro, cioe' tutte meno
-     * l'immagine.
+     * quelle che ne sono uscite.
      */
     _rowHeight : function() {
       var result = 0;
       for( var i = 0; i < this._CELLORDER.length; i++ ) {
-        if( i !== 1 && this._cellHasContent( i ) ) {
+        if( this.cellIsDisplayable( i ) && this._cellHasContent( i ) ) {
           result = Math.max( result, this.getCellHeight( i, true ) );
         }
       }
       return result;
     },
 
-    // overwritten: in cima l'immagine con la sua riga, sotto la fila
+    // overwritten: in cima l'immagine con la sua riga, sotto la fila, e la freccetta accanto a tutto
     _getContentSizeOrthogonalDir : function() {
       if( !this._isImageOnTop() ) {
         return this.base( arguments );
       }
       var row = this._rowHeight();
-      return this.getCellHeight( 1, true ) + ( row > 0 ? this.getSpacing() : 0 ) + row;
+      var result = this.getCellHeight( 1, true ) + ( row > 0 ? this.getSpacing() : 0 ) + row;
+      if( this._isArrowAside() ) {
+        result = Math.max( result, this.getCellHeight( 4, true ) );
+      }
+      return result;
     },
 
     /*
@@ -216,6 +247,9 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       if( this._isImageOnTop() ) {
         result = Math.max( result, this.getCellWidth( 1, true ) );
       }
+      if( this._isArrowAside() ) {
+        result += this.getCellWidth( 4, true ) + this.getSpacing();
+      }
       return result;
     },
 
@@ -226,11 +260,18 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
      */
     _renderLayoutFlowDir : function() {
       this.base( arguments );
+      var side = this.getDirection() === "rtl" ? "right" : "left";
+      var available = this._getAvailableInnerWidth();
       if( this._isImageOnTop() ) {
         var width = this.getCellWidth( 1, true );
-        var left = Math.round( this.getPaddingLeft() + ( this._getAvailableInnerWidth() - width ) / 2 );
-        this.$cells[ 1 ].css( this.getDirection() === "rtl" ? "right" : "left", Math.max( 0, left ) );
+        var left = Math.round( this.getPaddingLeft() + ( available - width ) / 2 );
+        this.$cells[ 1 ].css( side, Math.max( 0, left ) );
         this.$cells[ 1 ].css( "width", width );
+      }
+      if( this._isArrowAside() ) {
+        // di la' dallo spazio del contenuto, con in mezzo lo stacco: e' dove comincia la sua zona
+        this.$cells[ 4 ].css( side, this.getPaddingLeft() + available + this.getSpacing() );
+        this.$cells[ 4 ].css( "width", this.getCellWidth( 4, true ) );
       }
     },
 
@@ -252,11 +293,18 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this.$cells[ 1 ].css( "height", imageHeight );
       var row = top + imageHeight + gap;
       for( var i = 0; i < this._CELLORDER.length; i++ ) {
-        if( i !== 1 && this._cellHasContent( i ) ) {
+        if( this.cellIsDisplayable( i ) && this._cellHasContent( i ) ) {
           var height = this.getCellHeight( i );
           this.$cells[ i ].css( "top", Math.round( row + ( rowHeight - height ) / 2 ) );
           this.$cells[ i ].css( "height", height );
         }
+      }
+      if( this._isArrowAside() ) {
+        // la freccetta e' centrata nell'ALTEZZA DEL PULSANTE, non in quella della fila: sta in
+        // mezzo alla sua zona, che e' alta quanto il pulsante
+        var arrow = this.getCellHeight( 4, true );
+        this.$cells[ 4 ].css( "top", Math.round( this.getPaddingTop() + ( this.getInnerHeight() - arrow ) / 2 ) );
+        this.$cells[ 4 ].css( "height", arrow );
       }
     },
 
