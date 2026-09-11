@@ -65,6 +65,8 @@ public class Button extends Control {
 
   private String text = "";
   private String secondaryText = "";
+  private String iconShape = "";
+  private int iconShapeSize;
   private Font secondaryFont;
   private Color secondaryForeground;
   private boolean selected;
@@ -231,6 +233,74 @@ public class Button extends Control {
   public String getSecondaryText() {
     checkWidget();
     return secondaryText;
+  }
+
+  /**
+   * Sets a <b>shape</b> to be shown where the image goes: an inline SVG image, given as a css url,
+   * with the side of the square it is drawn on.
+   * <p>
+   * It shares the image's place, and the image wins: the shape is what a style sheet declares and
+   * the image what the program puts on top of it, so clearing the image brings the shape back. The
+   * choice is made by the client, so it holds whatever the order in which the two arrive.
+   * </p>
+   * <p>
+   * The shape takes part in <code>computeSize</code> with the side given here - it is an image, and
+   * an image needs a size to make room for.
+   * </p>
+   *
+   * @param iconShape the shape as a css url - <code>url("data:image/svg+xml,...")</code> - or an
+   *        empty string for none
+   * @param side the side of the shape, in pixels
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the shape is null</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void setIconShape( String iconShape, int side ) {
+    checkWidget();
+    if( iconShape == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    this.iconShape = iconShape;
+    this.iconShapeSize = side;
+  }
+
+  /**
+   * Returns the shape shown where the image goes, an empty string if there is none.
+   *
+   * @return the shape as a css url
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setIconShape(String, int)
+   */
+  public String getIconShape() {
+    checkWidget();
+    return iconShape;
+  }
+
+  /**
+   * Returns the side of the shape, in pixels.
+   *
+   * @return the side of the shape
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setIconShape(String, int)
+   */
+  public int getIconShapeSize() {
+    checkWidget();
+    return iconShapeSize;
   }
 
   /**
@@ -538,6 +608,9 @@ public class Button extends Control {
       height = arrowSize.height;
     } else {
       boolean hasImage = image != null;
+      // la forma tiene il posto dell'immagine solo quando l'immagine non c'e': e' la stessa scelta
+      // che fa il client quando scrive la cella, e le due misure devono coincidere
+      boolean hasShape = !hasImage && iconShape.length() > 0 && iconShapeSize > 0;
       boolean hasText = text.length() > 0;
       Font font = getFont();
       if( ( style & ( SWT.CHECK | SWT.RADIO ) ) != 0 ) {
@@ -552,8 +625,11 @@ public class Button extends Control {
         Rectangle imageBounds = image.getBounds();
         width += imageBounds.width;
         height = Math.max( height, imageBounds.height );
+      } else if( hasShape ) {
+        width += iconShapeSize;
+        height = Math.max( height, iconShapeSize );
       }
-      if( hasText && hasImage ) {
+      if( hasText && ( hasImage || hasShape ) ) {
         width += themeAdapter.getSpacing( this );
       }
       if( hasText ) {

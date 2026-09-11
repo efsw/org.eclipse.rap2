@@ -75,6 +75,14 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
     "alignment",
     "image",
     /**
+     * @name setIconShape
+     * @methodOf Button#
+     * @description Sets a shape shown where the image goes, as "&lt;side&gt;|&lt;css url&gt;". The
+     * image wins over it, so clearing the image brings the shape back.
+     * @param {string|null} iconShape the shape, or null for none
+     */
+    "iconShape",
+    /**
      * @name setSelection
      * @methodOf Button#
      * @description Sets the selection state of the receiver, if it is of type <code>CHECK</code>,
@@ -102,6 +110,18 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
     },
     "badge" : function( widget, value ) {
       rwt.widgets.util.Badges.setBadge( widget, value );
+    },
+    /*
+     * La forma arriva come "<lato>|<url>": un valore solo, cosi' il server la confronta come una
+     * stringa e un cambio di sola dimensione non passa inosservato.
+     */
+    "iconShape" : function( widget, value ) {
+      if( value === null ) {
+        widget.setIconShape( null, 0 );
+      } else {
+        var cut = value.indexOf( "|" );
+        widget.setIconShape( value.substring( cut + 1 ), parseInt( value.substring( 0, cut ), 10 ) );
+      }
     },
     /*
      * Colore e font del secondo testo. Arrivano come valore "user" e quindi vincono su quello

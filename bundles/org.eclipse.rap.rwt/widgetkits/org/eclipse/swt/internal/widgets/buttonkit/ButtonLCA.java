@@ -53,6 +53,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   private static final String PROP_SECONDARY_FOREGROUND = "secondaryForeground";
   private static final String PROP_MNEMONIC_INDEX = "mnemonicIndex";
   private static final String PROP_IMAGE = "image";
+  private static final String PROP_ICON_SHAPE = "iconShape";
   private static final String PROP_SELECTION = "selection";
   private static final String PROP_GRAYED = "grayed";
   private static final String PROP_ALIGNMENT = "alignment";
@@ -68,6 +69,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     preserveProperty( button, PROP_SECONDARY_FONT, button.getSecondaryFont() );
     preserveProperty( button, PROP_SECONDARY_FOREGROUND, button.getSecondaryForeground() );
     preserveProperty( button, PROP_IMAGE, button.getImage() );
+    preserveProperty( button, PROP_ICON_SHAPE, getIconShape( button ) );
     preserveProperty( button, PROP_SELECTION, Boolean.valueOf( button.getSelection() ) );
     preserveProperty( button, PROP_GRAYED, Boolean.valueOf( button.getGrayed() ) );
     preserveProperty( button, PROP_ALIGNMENT, getAlignment( button ) );
@@ -93,6 +95,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     renderProperty( button, PROP_SECONDARY_FOREGROUND, button.getSecondaryForeground(), null );
     renderMnemonicIndex( button );
     renderProperty( button, PROP_IMAGE, button.getImage(), null );
+    renderProperty( button, PROP_ICON_SHAPE, getIconShape( button ), null );
     renderProperty( button, PROP_ALIGNMENT, getAlignment( button ), DEFAULT_ALIGNMENT );
     renderProperty( button, PROP_SELECTION, button.getSelection(), false );
     renderProperty( button, PROP_GRAYED, button.getGrayed(), false );
@@ -118,6 +121,16 @@ public final class ButtonLCA extends WidgetLCA<Button> {
       result = "left";
     }
     return result;
+  }
+
+  /*
+   * La forma viaggia come l'immagine: url e dimensione in un array solo, e null quando non c'e'.
+   * Confrontarla come stringa - e non i due valori separati - fa si' che preserveValues e
+   * renderChanges vedano la stessa cosa, quindi un cambio di sola dimensione non passa inosservato.
+   */
+  private static String getIconShape( Button button ) {
+    String shape = button.getIconShape();
+    return shape.isEmpty() ? null : button.getIconShapeSize() + "|" + shape;
   }
 
   private static String getBadge( Button button ) {

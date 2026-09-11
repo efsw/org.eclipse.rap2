@@ -49,6 +49,8 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     }
     this.initTabIndex();
     this._rawText = null;
+    this._iconShape = null;
+    this._iconShapeSize = 0;
     this._rawSecondaryText = null;
     this._mnemonicIndex = null;
     this._markupEnabled = false;
@@ -95,6 +97,36 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._mnemonicIndex = null;
       this._applyText( false );
       this.dispatchSimpleEvent( "changeText", this ); // used by Synchronizer.js
+    },
+
+    /**
+     * La forma tinta che sta nel posto dell'immagine.
+     * <p>
+     * Non e' un'immagine e non passa da setImage di proposito: quel valore e' del programma, e se la
+     * forma ci finisse dentro azzerare l'immagine cancellerebbe anche la forma. Qui restano due
+     * valori distinti e la cella mostra l'immagine se c'e', altrimenti la forma - vedi
+     * _updateButtonImage.
+     * </p>
+     */
+    setIconShape : function( value, side ) {
+      this._iconShape = value ? value : null;
+      this._iconShapeSize = side;
+      this._updateButtonImage();
+    },
+
+    // overwritten: senza immagine, nella cella va la forma
+    _updateButtonImage : function() {
+      var image =
+          ( this._hotImage[ 0 ] != null && this.hasState( "over" ) )
+        ? this._hotImage
+        : this._image;
+      if( image[ 0 ] == null && this._iconShape != null ) {
+        image = [ this._iconShape, this._iconShapeSize, this._iconShapeSize ];
+      }
+      if( this.getCellContent( 1 ) !== image[ 0 ] ) {
+        this.setCellContent( 1, image[ 0 ] );
+        this.setCellDimension( 1, image[ 1 ], image[ 2 ] );
+      }
     },
 
     /**
