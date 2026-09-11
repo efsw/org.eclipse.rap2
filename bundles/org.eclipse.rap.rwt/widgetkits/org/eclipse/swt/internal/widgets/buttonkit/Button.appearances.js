@@ -37,6 +37,7 @@ var appearances = {
       result.secondaryFont = tv.getCssFont( "Button-SecondaryText", "font" );
       // la freccetta del menu: immagine e dimensione dal tema, come la spunta di un check
       result.dropDownIcon = tv.getCssSizedImage( "Button-DropDownIcon", "background-image" );
+      result.dropDownSpacing = tv.getCssDimension( "Button-DropDownIcon", "spacing" );
       result.backgroundColor = tv.getCssColor( "Button", "background-color" );
       result.backgroundImage = tv.getCssImage( "Button", "background-image" );
       result.backgroundRepeat = tv.getCssIdentifier( "Button", "background-repeat" );

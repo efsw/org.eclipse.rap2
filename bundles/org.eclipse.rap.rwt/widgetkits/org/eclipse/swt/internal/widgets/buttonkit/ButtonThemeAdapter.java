@@ -80,6 +80,16 @@ public class ButtonThemeAdapter extends ControlThemeAdapterImpl {
     return getCssImageSize( "Button-DropDownIcon", "background-image", button );
   }
 
+  /**
+   * The room kept at the left of the drop down arrow: the gap the separator of its zone runs
+   * through.
+   *
+   * @see Button#setDropDown(boolean)
+   */
+  public int getDropDownIconSpacing( Button button ) {
+    return getCssDimension( "Button-DropDownIcon", "spacing", button );
+  }
+
   public Size getArrowSize( Button button ) {
     if( ( button.getStyle() & SWT.ARROW ) != 0) {
       return getCssImageSize( "Button-ArrowIcon", "background-image", button );

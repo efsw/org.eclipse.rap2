@@ -258,6 +258,7 @@ Button[TOGGLE]:selected:hover {
 */
 Button-DropDownIcon {
   background-image: none;
+  spacing: 0px;
 }
 
 Button-SecondaryText {

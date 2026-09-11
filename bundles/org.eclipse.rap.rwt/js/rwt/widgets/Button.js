@@ -84,6 +84,13 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       themeable : true
     },
 
+    /* l'aria a sinistra della freccetta, dove passa il filo della zona */
+    dropDownSpacing : {
+      apply : "_applyDropDownIcon",
+      init : 0,
+      themeable : true
+    },
+
     secondaryTextColor : {
       apply : "_applySecondaryTextStyle",
       nullable : true,
@@ -126,10 +133,16 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
     _updateDropDownCell : function() {
       var icon = this._dropDown ? this.getDropDownIcon() : null;
       var url = icon ? icon[ 0 ] : null;
+      /*
+       * La cella e' piu' larga dell'immagine: immagine piu' la spaziatura dichiarata dal tema. Il
+       * vuoto resta a sinistra - l'immagine si appoggia al bordo destro - ed e' quello che da' aria
+       * fra il testo e il filo della zona. Il server somma la stessa cosa in computeSize.
+       */
+      var spacing = this.getDropDownSpacing();
       if( this.getCellContent( 4 ) !== url ) {
         this.setCellContent( 4, url );
-        this.setCellDimension( 4, icon ? icon[ 1 ] : 0, icon ? icon[ 2 ] : 0 );
       }
+      this.setCellDimension( 4, icon ? icon[ 1 ] + spacing : 0, icon ? icon[ 2 ] : 0 );
       this._updateDropDownZone();
     },
 
@@ -153,6 +166,9 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
         return;
       }
       cell.style.pointerEvents = "none";
+      // l'immagine appoggiata al lato dove finisce il pulsante: il vuoto della spaziatura sta
+      // dall'altra parte, dove passa il filo
+      cell.style.backgroundPosition = this.getDirection() === "rtl" ? "left center" : "right center";
       if( !node ) {
         node = document.createElement( "div" );
         node.className = "rwt-button-dropdown-zone";

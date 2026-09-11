@@ -133,6 +133,9 @@
       <property name="background-image"
           description="The arrow image. Its size takes part in the button's preferred size, so a bigger image makes room for itself." />
 
+      <property name="spacing"
+          description="The room kept at the left of the arrow, where the separator of its zone runs. It is part of the button's preferred size." />
+
       <state name="disabled"
           description="Applies when the button is disabled." />
 

@@ -704,7 +704,9 @@ public class Button extends Control {
           if( hasText || hasImage || hasShape ) {
             width += themeAdapter.getSpacing( this );
           }
-          width += dropDownSize.width;
+          // la cella della freccetta e' larga come l'immagine piu' la sua spaziatura: il vuoto sta
+          // a sinistra, dove passa il filo della zona, e il client la dimensiona allo stesso modo
+          width += dropDownSize.width + themeAdapter.getDropDownIconSpacing( this );
           height = Math.max( height, dropDownSize.height );
         }
       }
