@@ -13,6 +13,17 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
 
   extend : rwt.widgets.base.BasicButton,
 
+  statics : {
+    /*
+     * Il prefisso della maschera css, o null dove non c'e'. Serve a tingere la freccetta del menu
+     * col colore del testo del pulsante: la maschera usa il canale alfa dell'immagine e il colore
+     * lo mette il fondo, quindi un disegno solo vale per ogni famiglia di pulsanti.
+     */
+    MASK :   ( "maskImage" in document.documentElement.style ) ? "mask"
+           : ( "webkitMaskImage" in document.documentElement.style ) ? "webkitMask"
+           : null
+  },
+
   construct : function( buttonType ) {
     this.base( arguments, buttonType );
     this._alignment = buttonType === "arrow" ? "up" : "center";
@@ -182,12 +193,17 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
         this.$dropDownZone = node;
         this.$el.append( node );
       }
+      /*
+       * La zona comincia dove comincia la CELLA della freccetta, non prima: la cella si porta
+       * dentro la propria aria - e' larga immagine piu' spaziatura, con l'immagine appoggiata al
+       * bordo esterno - quindi il filo cade in quel vuoto. Sottraendo anche la spaziatura del
+       * widget, com'era prima, il filo finiva attaccato all'ultima lettera del testo.
+       */
       var left = parseInt( cell.style.left, 10 );
-      var spacing = this.getSpacing();
       var rtl = this.getDirection() === "rtl";
       node.style.cssText =   "position:absolute;top:0;bottom:0;z-index:-1;display:block;"
                            + ( rtl ? "left:0;right:" : "right:0;left:" )
-                           + ( isNaN( left ) ? 0 : Math.max( 0, left - spacing ) ) + "px";
+                           + ( isNaN( left ) ? 0 : Math.max( 0, left ) ) + "px";
     },
 
     _isOverDropDown : function( event ) {
@@ -416,6 +432,41 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       }
       // la cella della freccetta ha appena preso la sua posizione: la zona la segue
       this._updateDropDownZone();
+      this._tintDropDownIcon();
+    },
+
+    /*
+     * La freccetta col colore del testo del pulsante.
+     *
+     * Non come immagine di sfondo ma come MASCHERA: la maschera usa il canale alfa del png e il
+     * colore lo mette il fondo, quindi lo stesso disegno vale per un pulsante bianco, per uno
+     * pieno e per uno spento - segue anche il colore che il tema da' allo stato disabilitato. Il
+     * grigio cotto nel png invece stonava: su un primario col testo bianco si legge come una
+     * macchia.
+     *
+     * Si rimette dopo ogni aggiornamento delle celle, perche' il MultiCellWidget riscrive
+     * backgroundImage dal contenuto della cella (_updateImage) e cancellerebbe la tinta. Dove la
+     * maschera non c'e', l'immagine di sfondo resta com'e': grigia, ma visibile.
+     */
+    _tintDropDownIcon : function() {
+      var mask = rwt.widgets.Button.MASK;
+      var node = this.getCellNode( 4 );
+      var url = this.getCellContent( 4 );
+      if( mask == null || node == null || url == null ) {
+        return;
+      }
+      var position = this.getDirection() === "rtl" ? "left center" : "right center";
+      node.style.backgroundImage = "none";
+      node.style.backgroundColor = this.getTextColor() || "";
+      node.style[ mask + "Image" ] = "url(" + url + ")";
+      node.style[ mask + "Repeat" ] = "no-repeat";
+      node.style[ mask + "Position" ] = position;
+    },
+
+    // overwritten: il colore del testo e' anche il colore della freccetta
+    _applyTextColor : function( value, old ) {
+      this.base( arguments, value, old );
+      this._tintDropDownIcon();
     },
 
     _ontabfocus : function() {
