@@ -32,7 +32,9 @@ import org.eclipse.rap.rwt.RWT;
 import org.eclipse.rap.rwt.internal.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCA;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil;
+import org.eclipse.rap.rwt.internal.theme.ThemeAdapter;
 import org.eclipse.rap.rwt.remote.RemoteObject;
+import org.eclipse.rap.rwt.theme.BoxDimensions;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Button;
@@ -61,6 +63,10 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   private static final String PROP_ALIGNMENT = "alignment";
   private static final String PROP_MARKUP_ENABLED = "markupEnabled";
   private static final String PROP_BADGE = "badge";
+  private static final String PROP_LEFT_MARGIN = "leftMargin";
+  private static final String PROP_TOP_MARGIN = "topMargin";
+  private static final String PROP_RIGHT_MARGIN = "rightMargin";
+  private static final String PROP_BOTTOM_MARGIN = "bottomMargin";
 
   private static final String DEFAULT_ALIGNMENT = "center";
 
@@ -78,6 +84,10 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     preserveProperty( button, PROP_GRAYED, Boolean.valueOf( button.getGrayed() ) );
     preserveProperty( button, PROP_ALIGNMENT, getAlignment( button ) );
     preserveProperty( button, PROP_BADGE, getBadge( button ) );
+    preserveProperty( button, PROP_LEFT_MARGIN, button.getLeftMargin() );
+    preserveProperty( button, PROP_TOP_MARGIN, button.getTopMargin() );
+    preserveProperty( button, PROP_RIGHT_MARGIN, button.getRightMargin() );
+    preserveProperty( button, PROP_BOTTOM_MARGIN, button.getBottomMargin() );
   }
 
   @Override
@@ -106,8 +116,25 @@ public final class ButtonLCA extends WidgetLCA<Button> {
     renderProperty( button, PROP_SELECTION, button.getSelection(), false );
     renderProperty( button, PROP_GRAYED, button.getGrayed(), false );
     renderProperty( button, PROP_BADGE, getBadge( button ), null );
+    renderMargins( button );
     renderListenSelection( button );
     renderClientListeners( button );
+  }
+
+  /*
+   * The default is the theme's padding, so a button that declares none sends nothing and the
+   * client keeps the value its appearance gives it - which is the same one.
+   */
+  private static void renderMargins( Button button ) {
+    BoxDimensions padding = getThemeAdapter( button ).getPadding( button );
+    renderProperty( button, PROP_LEFT_MARGIN, button.getLeftMargin(), padding.left );
+    renderProperty( button, PROP_TOP_MARGIN, button.getTopMargin(), padding.top );
+    renderProperty( button, PROP_RIGHT_MARGIN, button.getRightMargin(), padding.right );
+    renderProperty( button, PROP_BOTTOM_MARGIN, button.getBottomMargin(), padding.bottom );
+  }
+
+  private static ButtonThemeAdapter getThemeAdapter( Button button ) {
+    return ( ButtonThemeAdapter )button.getAdapter( ThemeAdapter.class );
   }
 
   private static String getAlignment( Button button ) {

@@ -76,6 +76,10 @@ public class Button extends Control {
   private boolean grayed;
   private Image image;
   private boolean isDefault;
+  private int leftMargin = SWT.DEFAULT;
+  private int topMargin = SWT.DEFAULT;
+  private int rightMargin = SWT.DEFAULT;
+  private int bottomMargin = SWT.DEFAULT;
 
   /**
    * Constructs a new instance of this class given its parent
@@ -694,7 +698,7 @@ public class Button extends Control {
     int width = 0;
     int height = 0;
     ButtonThemeAdapter themeAdapter = getThemeAdapter();
-    BoxDimensions padding = themeAdapter.getPadding( this );
+    BoxDimensions padding = getPadding();
     if( ( style & SWT.ARROW ) != 0 ) {
       Size arrowSize = themeAdapter.getArrowSize( this );
       width = arrowSize.width;
@@ -942,6 +946,162 @@ public class Button extends Control {
       result = checkBits( result, SWT.UP, SWT.DOWN, SWT.LEFT, SWT.RIGHT, 0, 0 );
     }
     return result;
+  }
+
+  /**
+   * Sets the space between the border of the receiver and its content on the left, or
+   * <code>SWT.DEFAULT</code> to use the one the theme gives it. Negative values other than
+   * <code>SWT.DEFAULT</code> are ignored.
+   * <p>
+   * The padding is not painted only: the button <em>sizes itself</em> on it, in
+   * <code>computeSize</code>. That is what makes this a property of the widget rather than
+   * something a stylesheet can do on the client - a padding declared in the browser alone would
+   * move the content inside a button computed for the theme's one, and the content would be
+   * clipped. It is the same reason a column header has a font of its own.
+   * </p>
+   * <p>
+   * What the theme declares remains the default, per variant and per state: only the sides set
+   * here are taken away from it, and setting a side back to <code>SWT.DEFAULT</code> returns it.
+   * </p>
+   *
+   * @param leftMargin the space on the left in pixels, or SWT.DEFAULT for the theme's
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #getLeftMargin()
+   * @since 4.1
+   */
+  public void setLeftMargin( int leftMargin ) {
+    checkWidget();
+    if( leftMargin >= 0 || leftMargin == SWT.DEFAULT ) {
+      this.leftMargin = leftMargin;
+    }
+  }
+
+  /**
+   * Returns the space between the border of the receiver and its content on the left: the one set
+   * with {@link #setLeftMargin(int)}, or the theme's when none was set.
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 4.1
+   */
+  public int getLeftMargin() {
+    checkWidget();
+    return getPadding().left;
+  }
+
+  /**
+   * Sets the space between the border of the receiver and its content above it.
+   *
+   * @see #setLeftMargin(int)
+   * @since 4.1
+   */
+  public void setTopMargin( int topMargin ) {
+    checkWidget();
+    if( topMargin >= 0 || topMargin == SWT.DEFAULT ) {
+      this.topMargin = topMargin;
+    }
+  }
+
+  /**
+   * Returns the space between the border of the receiver and its content above it.
+   *
+   * @see #getLeftMargin()
+   * @since 4.1
+   */
+  public int getTopMargin() {
+    checkWidget();
+    return getPadding().top;
+  }
+
+  /**
+   * Sets the space between the border of the receiver and its content on the right.
+   *
+   * @see #setLeftMargin(int)
+   * @since 4.1
+   */
+  public void setRightMargin( int rightMargin ) {
+    checkWidget();
+    if( rightMargin >= 0 || rightMargin == SWT.DEFAULT ) {
+      this.rightMargin = rightMargin;
+    }
+  }
+
+  /**
+   * Returns the space between the border of the receiver and its content on the right.
+   *
+   * @see #getLeftMargin()
+   * @since 4.1
+   */
+  public int getRightMargin() {
+    checkWidget();
+    return getPadding().right;
+  }
+
+  /**
+   * Sets the space between the border of the receiver and its content below it.
+   *
+   * @see #setLeftMargin(int)
+   * @since 4.1
+   */
+  public void setBottomMargin( int bottomMargin ) {
+    checkWidget();
+    if( bottomMargin >= 0 || bottomMargin == SWT.DEFAULT ) {
+      this.bottomMargin = bottomMargin;
+    }
+  }
+
+  /**
+   * Returns the space between the border of the receiver and its content below it.
+   *
+   * @see #getLeftMargin()
+   * @since 4.1
+   */
+  public int getBottomMargin() {
+    checkWidget();
+    return getPadding().bottom;
+  }
+
+  /**
+   * Sets the space between the border of the receiver and its content on the four sides at once.
+   *
+   * @see #setLeftMargin(int)
+   * @since 4.1
+   */
+  public void setMargins( int leftMargin, int topMargin, int rightMargin, int bottomMargin ) {
+    checkWidget();
+    setLeftMargin( leftMargin );
+    setTopMargin( topMargin );
+    setRightMargin( rightMargin );
+    setBottomMargin( bottomMargin );
+  }
+
+  /*
+   * The padding the button actually uses: the theme's, with the sides set on the widget taking
+   * its place. Control answers with the theme's, buffered and dropped when the variant changes,
+   * and that is what the sides not set here keep - declaring one side does not replace the theme.
+   */
+  @Override
+  BoxDimensions getPadding() {
+    BoxDimensions theme = super.getPadding();
+    if(    leftMargin == SWT.DEFAULT
+        && topMargin == SWT.DEFAULT
+        && rightMargin == SWT.DEFAULT
+        && bottomMargin == SWT.DEFAULT )
+    {
+      return theme;
+    }
+    return new BoxDimensions( topMargin == SWT.DEFAULT ? theme.top : topMargin,
+                              rightMargin == SWT.DEFAULT ? theme.right : rightMargin,
+                              bottomMargin == SWT.DEFAULT ? theme.bottom : bottomMargin,
+                              leftMargin == SWT.DEFAULT ? theme.left : leftMargin );
   }
 
   private ButtonThemeAdapter getThemeAdapter() {

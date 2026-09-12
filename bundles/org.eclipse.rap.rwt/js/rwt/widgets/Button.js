@@ -130,6 +130,28 @@ rwt.qx.Class.define( "rwt.widgets.Button", {
       this._markupEnabled = value;
     },
 
+    /*
+     * Il padding arriva come quattro valori, come per CLabel: sono un valore dell'utente, e nel
+     * sistema delle proprieta' un valore dell'utente sta sopra a quello scritto dall'appearance -
+     * che altrimenti lo riscriverebbe dal tema a ogni cambio di stato, per esempio passandoci sopra
+     * col mouse.
+     */
+    setLeftMargin : function( value ) {
+      this.setPaddingLeft( value );
+    },
+
+    setTopMargin : function( value ) {
+      this.setPaddingTop( value );
+    },
+
+    setRightMargin : function( value ) {
+      this.setPaddingRight( value );
+    },
+
+    setBottomMargin : function( value ) {
+      this.setPaddingBottom( value );
+    },
+
     setText : function( value ) {
       this._rawText = value;
       this._mnemonicIndex = null;

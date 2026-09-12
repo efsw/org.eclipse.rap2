@@ -113,7 +113,11 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
      */
     "selection",
     "grayed",
-    "badge"
+    "badge",
+    "leftMargin",
+    "topMargin",
+    "rightMargin",
+    "bottomMargin"
   ] ),
 
   propertyHandler : rwt.remote.HandlerUtil.extendControlPropertyHandler( {
