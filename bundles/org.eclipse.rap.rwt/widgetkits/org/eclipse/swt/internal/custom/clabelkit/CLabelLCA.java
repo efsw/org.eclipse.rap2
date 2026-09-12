@@ -14,6 +14,7 @@ package org.eclipse.swt.internal.custom.clabelkit;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.getStyles;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.hasChanged;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.preserveProperty;
+import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.renderListenSelection;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil.renderProperty;
 import static org.eclipse.rap.rwt.internal.lifecycle.WidgetUtil.getId;
 import static org.eclipse.rap.rwt.internal.protocol.JsonUtil.createJsonArray;
@@ -88,6 +89,11 @@ public final class CLabelLCA extends WidgetLCA<CLabel> {
     renderProperty( label, PROP_ALIGNMENT, getAlignment( label ), DEFAULT_ALIGNMENT );
     renderMargins( label );
     WidgetLCAUtil.renderBackgroundGradient( label );
+    /*
+     * The click on a fragment link inside the markup arrives as a Selection, with the fragment as
+     * the event text. Rendering the flag is what lets the client send it at all.
+     */
+    renderListenSelection( label );
   }
 
   ///////////////////////////////////////////////////

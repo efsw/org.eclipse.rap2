@@ -27,6 +27,9 @@ rwt.qx.Class.define( "rwt.widgets.Label", {
     this._markupEnabled = styles.MARKUP_ENABLED === true;
     this._rawText = null;
     this._mnemonicIndex = null;
+    if( this._markupEnabled ) {
+      this.addEventListener( "click", this._onMarkupClick, this );
+    }
   },
 
   destruct : function() {
@@ -87,6 +90,50 @@ rwt.qx.Class.define( "rwt.widgets.Label", {
       } else {
         this.setCellContent( 1, null );
       }
+    },
+
+    /*
+     * UN LINK A FRAMMENTO DENTRO UN MARKUP E' UN EVENTO DEL WIDGET, non una navigazione.
+     *
+     * Un <a href="#..."> lo seguirebbe il browser: il frammento finisce nell'indirizzo e nella
+     * cronologia, il tasto "indietro" lo ripropone, e premere due volte di fila lo STESSO link non
+     * produce niente, perche' il frammento non cambia. Sono tre difetti per un gesto che l'
+     * applicazione voleva sapere e basta.
+     *
+     * Quindi il click si prende qui: si ferma il giro del browser e si manda al server una
+     * Selection con il frammento come testo. La regola e' stretta di proposito: solo i link a
+     * FRAMMENTO, cosi' un <a href="http://..."> dentro un markup continua ad aprirsi come sempre.
+     *
+     * E solo se il server ascolta: notify() da se' non manda niente a chi non ha dichiarato
+     * l'ascolto, ma senza questo controllo si fermerebbe comunque la navigazione, cioe' si
+     * romperebbe un link a frammento in un'applicazione che non ne sa niente.
+     */
+    _onMarkupClick : function( event ) {
+      var remoteObject = rwt.remote.Connection.getInstance().getRemoteObject( this );
+      if( !remoteObject.isListening( "Selection" ) ) {
+        return;
+      }
+      var fragment = this._findFragmentLink( event.getDomTarget() );
+      if( fragment === null ) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      rwt.remote.EventUtil.notifySelected( this, { "text" : fragment } );
+    },
+
+    /** il frammento del link su cui si e' cliccato, oppure null se non si e' cliccato su uno */
+    _findFragmentLink : function( node ) {
+      var element = this.getElement();
+      var current = node;
+      while( current != null && current !== element ) {
+        if( current.tagName === "A" ) {
+          var href = current.getAttribute( "href" );
+          return href != null && href.charAt( 0 ) === "#" ? href.substr( 1 ) : null;
+        }
+        current = current.parentNode;
+      }
+      return null;
     },
 
     _onMnemonic : function( event ) {

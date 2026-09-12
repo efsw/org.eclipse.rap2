@@ -48,6 +48,13 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Label", {
     "backgroundGradient" : rwt.remote.HandlerUtil.getBackgroundGradientHandler()
   } ),
 
+  /*
+   * La Selection di un'etichetta e' il click su un link a frammento dentro il suo markup: vedi
+   * rwt.widgets.Label#_onMarkupClick. Dichiararla qui serve a far arrivare al client il fatto che
+   * il server la ascolta - senza, notify() non manderebbe niente.
+   */
+  events : [ "Selection" ],
+
   listeners : rwt.remote.HandlerUtil.extendControlListeners( [] ),
 
   listenerHandler : rwt.remote.HandlerUtil.extendControlListenerHandler( {} ),
