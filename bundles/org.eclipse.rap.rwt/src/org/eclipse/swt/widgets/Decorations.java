@@ -11,7 +11,6 @@
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import org.eclipse.rap.rwt.internal.lifecycle.ProcessActionRunner;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.DisposeEvent;
@@ -35,7 +34,6 @@ public class Decorations extends Canvas {
   private String text;
   private Button defaultButton;
   private Button saveDefault;
-  private Listener defaultButtonFocusListener;
   private Control savedFocus;
 
   Decorations( Composite parent ) {
@@ -339,17 +337,22 @@ public class Decorations extends Canvas {
     return result;
   }
 
+  /*
+   * A focused push button no longer becomes the default button of its shell.
+   *
+   * It used to, and the effect was that the default moved under the user's finger: click any
+   * button once and from then on Enter, pressed anywhere in the window, ran that button again -
+   * a command nobody had chosen as the one Enter stands for. The client drew it, too: the
+   * "default" state, plus the dotted focus frame inside the button.
+   *
+   * Operating a button from the keyboard is untouched: a button that HAS the focus still runs on
+   * Enter and on Space, because the client handles those keys on the button itself
+   * (BasicButton._onKeyDown). What is gone is Enter reaching a button that does not have the
+   * focus. An application that wants one - the OK of a dialog - says so with
+   * Shell#setDefaultButton, which is the point of that method.
+   */
   void updateDefaultButton( final Control focusControl, final boolean set ) {
-    if( isPushButton( focusControl ) ) {
-      ProcessActionRunner.add( new Runnable() {
-        @Override
-        public void run() {
-          Button defaultButton = ( Button )focusControl;
-          updateDefaultButtonFocusListener( defaultButton, set );
-          setDefaultButton( set ? defaultButton : null, false );
-        }
-      } );
-    }
+    // nothing: the default button is the one the application declares, not the one being used
   }
 
   void setDefaultButton( Button button, boolean save ) {
@@ -483,32 +486,6 @@ public class Decorations extends Canvas {
     if( menuBar != null ) {
       menuBar.removeDisposeListener( menuBarDisposeListener );
     }
-  }
-
-  private static boolean isPushButton( Control control ) {
-    return control instanceof Button && ( control.style & SWT.PUSH ) != 0 ;
-  }
-
-  private void updateDefaultButtonFocusListener( Button defaultButton, boolean set ) {
-    if( !defaultButton.isDisposed() ) {
-      if( set ) {
-        defaultButton.addListener( SWT.FocusOut, getDefaultButtonFocusListener() );
-      } else {
-        defaultButton.removeListener( SWT.FocusOut, getDefaultButtonFocusListener() );
-      }
-    }
-  }
-
-  private Listener getDefaultButtonFocusListener() {
-    if( defaultButtonFocusListener == null ) {
-      defaultButtonFocusListener = new Listener() {
-        @Override
-        public void handleEvent( Event event ) {
-          // dummy listener - see bug 419920
-        }
-      };
-    }
-    return defaultButtonFocusListener;
   }
 
   ///////////////////
