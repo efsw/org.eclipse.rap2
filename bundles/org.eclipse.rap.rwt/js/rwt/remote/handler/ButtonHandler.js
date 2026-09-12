@@ -24,6 +24,18 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Button", {
       buttonType = "arrow";
     }
     var result = new rwt.widgets.Button( buttonType );
+    /*
+     * NO_FOCUS: il pulsante esce dall'ordine del tab e non prende il fuoco nemmeno col mouse, come
+     * un item di toolbar. Senza indice il widget non e' piu' "focusable" - lo dice isFocusable() -
+     * e quindi non e' nemmeno raggiungibile col tasto tab.
+     *
+     * Il secondo pezzo sta in EventHandlerUtil.handleFocusedChild: senza quello, cliccando il
+     * pulsante il fuoco risalirebbe al primo antenato che lo accetta, e il campo su cui si stava
+     * scrivendo lo perderebbe comunque.
+     */
+    if( styleMap.NO_FOCUS ) {
+      result.setTabIndex( null );
+    }
     result.setMarkupEnabled( properties.markupEnabled === true );
     result.setWrap( styleMap.WRAP );
     rwt.remote.HandlerUtil.addStatesForStyles( result, properties.style );

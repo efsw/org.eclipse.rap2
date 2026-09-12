@@ -46,7 +46,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
 
   private static final String TYPE = "rwt.widgets.Button";
   private static final String[] ALLOWED_STYLES = {
-    "ARROW", "CHECK", "PUSH", "RADIO", "TOGGLE", "FLAT", "WRAP", "BORDER"
+    "ARROW", "CHECK", "PUSH", "RADIO", "TOGGLE", "FLAT", "WRAP", "BORDER", "NO_FOCUS"
   };
 
   private static final String PROP_TEXT = "text";

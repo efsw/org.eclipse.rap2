@@ -211,6 +211,17 @@ rwt.event.EventHandlerUtil = {
                      && focusTarget.hasState( "rwt_NO_FOCUS" ) )
           {
             return;
+          } else if(    focusTarget instanceof rwt.widgets.Button
+                     && focusTarget.hasState( "rwt_NO_FOCUS" ) )
+          {
+            /*
+             * Come un item di toolbar: il fuoco resta DOV'E'. Non basta che il pulsante non sia
+             * focusable - in quel caso il giro qui sopra continuerebbe a salire e lo darebbe al
+             * primo antenato che lo accetta, cioe' il campo su cui si stava scrivendo lo
+             * perderebbe lo stesso, che e' il difetto per cui NO_FOCUS su un pulsante era
+             * inutilizzabile.
+             */
+            return;
           }
           focusTarget = focusTarget.getParent();
         }
