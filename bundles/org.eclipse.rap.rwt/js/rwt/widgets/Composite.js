@@ -111,6 +111,15 @@ rwt.qx.Class.define( "rwt.widgets.Composite", {
       if( !node ) {
         return;
       }
+      /*
+       * UN COMPOSITE NASCOSTO MISURA ZERO, e zero non e' una risposta: scrollHeight e clientHeight
+       * valgono tutti e due 0, il contenuto sembra starci, e si chiuderebbe lo scorrimento a una
+       * scheda che semplicemente non e' quella davanti. Qui non si decide niente e si aspetta che
+       * compaia - ci pensa _afterAppear a richiedere la misura.
+       */
+      if( node.clientHeight === 0 && node.clientWidth === 0 ) {
+        return;
+      }
       var tolerance = rwt.widgets.Composite.CLIENT_SCROLL_TOLERANCE;
       var needed =    node.scrollHeight > node.clientHeight + tolerance
                    || node.scrollWidth > node.clientWidth + tolerance;
@@ -128,6 +137,17 @@ rwt.qx.Class.define( "rwt.widgets.Composite", {
         this.setOverflow( "hidden" );
         rwt.widgets.base.Widget.disableScrolling( this );
       }
+    },
+
+    /*
+     * IL COMPOSITE COMPARE: in una gestione a schede e' il momento in cui si puo' misurare per la
+     * prima volta. Le schede dietro esistono gia' - hanno preso il loro layout mentre erano
+     * nascoste - quindi senza questo passaggio l'unica scheda che scorrerebbe e' quella aperta
+     * all'apertura della maschera.
+     */
+    _afterAppear : function() {
+      this.base( arguments );
+      this._queueClientScrollingCheck();
     },
 
     /* il composite ha cambiato misura: quello che prima ci stava adesso puo' sforare, e viceversa */
