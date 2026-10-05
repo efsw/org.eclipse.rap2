@@ -51,6 +51,10 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
     this.addEventListener( "changeWidth", this._onChangeSize, this );
     this.addEventListener( "changeHeight", this._onChangeSize, this );
     this.addEventListener( "keydown", this._onKeydown );
+    this.addEventListener( "mousedown", this._onMoveHandleMouseDown, this );
+    this.addEventListener( "mousemove", this._onMoveHandleMouseMove, this );
+    this.addEventListener( "mouseup", this._onMoveHandleMouseUp, this );
+    this._moveHandleActive = false;
     var req = rwt.remote.Connection.getInstance();
     req.addEventListener( "send", this._onSend, this );
     this.getCaptionBar().setWidth( "100%" );
@@ -451,6 +455,80 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
         this._sendResizeFlag = true;
         this._sendBoundsTimer.start();
       }
+    },
+
+    /*
+     * ------------------------------------------------------------------------------------------
+     * SPOSTARE LA FINESTRA PRENDENDOLA DA UN PEZZO QUALUNQUE
+     *
+     * Una finestra senza TITLE non ha una barra del titolo del rap da cui prenderla: la sua resta
+     * alta un pixel, e il titolo che si vede e' disegnato dentro l'area client da chi ha costruito
+     * la finestra. Il trascinamento del rap c'e' tutto, ma e' agganciato a quel pixel.
+     *
+     * Qui il server dichiara quale pezzo fa da presa - una classe html sul controllo - e il
+     * trascinamento riusa la meccanica che c'e' gia': la stessa sessione, la stessa matematica,
+     * e alla fine le stesse setLeft/setTop, che da sole mandano i bounds al server.
+     *
+     * Perche' nel browser e non con un ascoltatore sul server: il movimento del mouse, da li',
+     * costerebbe un giro di rete a ogni pixel.
+     * ------------------------------------------------------------------------------------------
+     */
+
+    /** la classe del pezzo che trascina */
+    MOVE_HANDLE_CLASS : "nMoveShell",
+
+    /** ... e quella del pezzo che, pur stando dentro, ha un mestiere suo */
+    MOVE_HANDLE_OFF_CLASS : "nMoveShellOff",
+
+    /**
+     * Il pezzo da cui si sta prendendo la finestra, risalendo da dove e' caduto il mouse fino alla
+     * finestra stessa: decide il primo che si incontra, cosi' un pezzo escluso dentro una presa
+     * resta escluso.
+     */
+    _findMoveHandle : function( widget ) {
+      var w = widget;
+      while( w && w !== this ) {
+        var element = w.getElement ? w.getElement() : null;
+        var classes = element ? element.className : null;
+        if( classes ) {
+          // l'esclusa si guarda per prima: il suo nome CONTIENE quello della presa
+          if( classes.indexOf( this.MOVE_HANDLE_OFF_CLASS ) !== -1 ) {
+            return null;
+          }
+          if( classes.indexOf( this.MOVE_HANDLE_CLASS ) !== -1 ) {
+            return w;
+          }
+        }
+        w = w.getParent ? w.getParent() : null;
+      }
+      return null;
+    },
+
+    _onMoveHandleMouseDown : function( event ) {
+      if( this._moveHandleActive || !this._findMoveHandle( event.getTarget() ) ) {
+        return;
+      }
+      this._oncaptionmousedown( event );
+      // la sessione puo' non essere partita: finestra non spostabile, o ingrandita
+      this._moveHandleActive = this._dragSession != null;
+    },
+
+    _onMoveHandleMouseMove : function( event ) {
+      if( this._moveHandleActive ) {
+        this._oncaptionmousemove( event );
+      }
+    },
+
+    _onMoveHandleMouseUp : function( event ) {
+      if( this._moveHandleActive ) {
+        this._moveHandleActive = false;
+        this._oncaptionmouseup( event );
+      }
+    },
+
+    /* mentre si trascina dalla presa il mouse lo tiene la finestra, non la sua barra da un pixel */
+    _getMoveCaptureWidget : function() {
+      return this._moveHandleActive ? this : this._captionBar;
     },
 
     _onChangeLocation : function() {

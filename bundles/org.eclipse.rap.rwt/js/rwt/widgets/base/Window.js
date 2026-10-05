@@ -1368,7 +1368,7 @@ rwt.qx.Class.define("rwt.widgets.base.Window",
       }
 
       // enable capturing
-      this._captionBar.setCapture(true);
+      this._getMoveCaptureWidget().setCapture(true);
 
       // element cache
       var el = this.getElement();
@@ -1442,7 +1442,7 @@ rwt.qx.Class.define("rwt.widgets.base.Window",
       }
 
       // disable capturing
-      this._captionBar.setCapture(false);
+      this._getMoveCaptureWidget().setCapture(false);
 
       // move window to last position
       if (s.lastX != null) {
@@ -1483,7 +1483,7 @@ rwt.qx.Class.define("rwt.widgets.base.Window",
       var s = this._dragSession;
 
       // pre check for active session and capturing
-      if (!s || !this._captionBar.getCapture()) {
+      if (!s || !this._getMoveCaptureWidget().getCapture()) {
         return;
       }
 
@@ -1511,6 +1511,18 @@ rwt.qx.Class.define("rwt.widgets.base.Window",
      * @param e {rwt.event.MouseEvent} double click event
      * @return {void}
      */
+    /**
+     * The widget that captures the mouse while the window is being dragged.
+     *
+     * The caption bar is the one that starts the drag, so it is also the one that keeps the mouse.
+     * Subclasses that let the user drag the window by some other part of it return that part here
+     * instead, otherwise the move would stop as soon as the pointer leaves the caption.
+     */
+    _getMoveCaptureWidget : function() {
+      return this._captionBar;
+    },
+
+
     _oncaptiondblblick : function()
     {
       if (!this._maximizeButton.getEnabled()) {
