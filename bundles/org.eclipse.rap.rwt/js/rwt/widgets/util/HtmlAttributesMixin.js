@@ -97,15 +97,16 @@ rwt.qx.Mixin.define( "rwt.widgets.util.HtmlAttributesMixin", {
       if( this._htmlAttributes[ attribute ] === normalized ) {
         return false;
       }
+      var target = this._getHtmlAttributeTarget( attribute );
       if( normalized === null ) {
         delete this._htmlAttributes[ attribute ];
-        if( this._element && !indirect ) {
-          this._element.removeAttribute( attribute );
+        if( target && !indirect ) {
+          target.removeAttribute( attribute );
         }
       } else {
         this._htmlAttributes[ attribute ] = normalized;
-        if( this._element && !indirect ) {
-          this._element.setAttribute( attribute, normalized );
+        if( target && !indirect ) {
+          target.setAttribute( attribute, normalized );
         }
       }
       if( attribute === "class" && this._renderCssClasses ) {
@@ -115,6 +116,17 @@ rwt.qx.Mixin.define( "rwt.widgets.util.HtmlAttributesMixin", {
         this._applyInlineStyle( this._element, normalized === null ? "" : normalized );
       }
       return true;
+    },
+
+    /**
+     * The element an attribute has to be written on. The widget element by default; a widget made
+     * of more than one element overrides this for the attributes that describe an inner one.
+     *
+     * A text field is the case that asks for it: "autocomplete" speaks about the input the user
+     * types into, and on the surrounding element the browser would never read it.
+     */
+    _getHtmlAttributeTarget : function( attribute ) { // eslint-disable-line no-unused-vars
+      return this._element;
     },
 
     /**

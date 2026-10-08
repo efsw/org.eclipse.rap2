@@ -313,6 +313,15 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
       this._inputElement.addEventListener( "input", this.__oninput, false );
 
       /*
+       * L'elemento di immissione nasce adesso: se il server ha gia' dichiarato come va compilato,
+       * la dichiarazione va riscritta qui sopra, dove il browser la legge. Il valore di partenza
+       * resta quello messo in getInputElement, che questa riga sostituisce.
+       */
+      if( this._htmlAttributes && this._htmlAttributes[ "autocomplete" ] ) {
+        this._inputElement.setAttribute( "autocomplete", this._htmlAttributes[ "autocomplete" ] );
+      }
+
+      /*
        * QUELLO CHE SCRIVE IL BROWSER NON PASSA DA "input". Un campo compilato dal gestore delle
        * password non genera l'evento su cui si regge tutta la catena del valore, e siccome il testo
        * viaggia verso il server solo quando la property cambia, il server resta con il campo vuoto:
@@ -509,6 +518,10 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
 
     ////////////////
     // event handler
+
+    _getHtmlAttributeTarget : function( attribute ) {
+      return attribute === "autocomplete" ? this._inputElement : this._element;
+    },
 
     _oninput : function() {
       try {

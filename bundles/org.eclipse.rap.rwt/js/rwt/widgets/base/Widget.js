@@ -3127,7 +3127,9 @@ rwt.qx.Class.define( "rwt.widgets.base.Widget", {
           // "class" is rendered by _renderCssClasses together with the generated classes, and
           // "style" is applied declaration by declaration by _applyInlineStyle
           if( property !== "class" && property !== "style" ) {
-            element.setAttribute( property, this._htmlAttributes[ property ] );
+            // un attributo che descrive un elemento interno va scritto la', non sul widget
+            var target = this._getHtmlAttributeTarget( property ) || element;
+            target.setAttribute( property, this._htmlAttributes[ property ] );
           }
         }
         if( this._htmlAttributes[ "style" ] ) {
