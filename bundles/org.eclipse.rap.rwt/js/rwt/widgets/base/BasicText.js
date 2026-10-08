@@ -15,6 +15,38 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
 
   extend : rwt.widgets.base.Terminator,
 
+  statics : {
+
+    /**
+     * Il nome dell'animazione che segnala il riempimento automatico del browser. Non anima niente:
+     * serve solo perche' l'evento "animationstart" arrivi quando il browser compila un campo.
+     */
+    AUTOFILL_ANIMATION : "rwtAutoFill",
+
+    _autoFillSheet : null,
+
+    /**
+     * Dichiara, una volta per documento, l'animazione agganciata allo pseudo-stato di riempimento
+     * automatico. I browser derivati da chromium (e safari) marcano cosi' i campi che hanno
+     * compilato da se', e questa e' l'unica notifica che danno prima che l'utente tocchi la pagina.
+     */
+    ensureAutoFillSheet : function() {
+      if( rwt.widgets.base.BasicText._autoFillSheet != null ) {
+        return;
+      }
+      var name = rwt.widgets.base.BasicText.AUTOFILL_ANIMATION;
+      var css = "@-webkit-keyframes " + name + " { from { } to { } }"
+              + "@keyframes " + name + " { from { } to { } }"
+              + "input:-webkit-autofill, textarea:-webkit-autofill {"
+              + "  -webkit-animation-name: " + name + ";"
+              + "  animation-name: " + name + ";"
+              + "  animation-duration: 1ms;"
+              + "}";
+      rwt.widgets.base.BasicText._autoFillSheet = rwt.html.StyleSheet.createElement( css );
+    }
+
+  },
+
   construct : function( value ) {
     this.base( arguments );
     if( value != null ) {
@@ -26,6 +58,7 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
     this._selectionStart = 0;
     this._selectionLength = 0;
     this.__oninput = rwt.util.Functions.bind( this._oninput, this );
+    this.__onautofill = rwt.util.Functions.bind( this._onautofill, this );
     this.addEventListener( "blur", this._onblur );
     this.addEventListener( "keydown", this._onkeydown );
     this.addEventListener( "keypress", this._onkeypress );
@@ -40,7 +73,9 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
   destruct : function() {
     if( this._inputElement != null ) {
       this._inputElement.removeEventListener( "input", this.__oninput, false );
+      this._inputElement.removeEventListener( "animationstart", this.__onautofill, false );
     }
+    rwt.remote.Connection.getInstance().removeEventListener( "send", this._syncValueFromElement, this );
     this._inputElement = null;
     this.__font = null;
   },
@@ -276,6 +311,22 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
 
     _textInit : function() {
       this._inputElement.addEventListener( "input", this.__oninput, false );
+
+      /*
+       * QUELLO CHE SCRIVE IL BROWSER NON PASSA DA "input". Un campo compilato dal gestore delle
+       * password non genera l'evento su cui si regge tutta la catena del valore, e siccome il testo
+       * viaggia verso il server solo quando la property cambia, il server resta con il campo vuoto:
+       * a schermo le credenziali ci sono, per l'applicazione no.
+       *
+       * Due reti, perche' nessuna delle due basta da sola. L'animazione dice subito che il browser
+       * ha compilato - dove quello pseudo-stato esiste - mentre il controllo prima di ogni richiesta
+       * copre tutto il resto, compreso chi scrive nel campo senza eventi di nessun tipo, e vale
+       * anche quando l'utente non tocca mai il campo e va dritto sul pulsante.
+       */
+      this._inputElement.addEventListener( "animationstart", this.__onautofill, false );
+      rwt.widgets.base.BasicText.ensureAutoFillSheet();
+      rwt.remote.Connection.getInstance().addEventListener( "send", this._syncValueFromElement, this );
+
       this._applyBrowserFixesOnCreate();
     },
 
@@ -481,6 +532,27 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
     _updateValueProperty : function() {
       if( !this.isDisposed() ) {
         this.setValue( this.getComputedValue().toString() );
+      }
+    },
+
+    _onautofill : function( event ) {
+      if( event.animationName === rwt.widgets.base.BasicText.AUTOFILL_ANIMATION ) {
+        // il valore puo' non essere ancora leggibile nell'istante dell'animazione
+        rwt.client.Timer.once( this._syncValueFromElement, this, 0 );
+      }
+    },
+
+    /**
+     * Allinea la property al contenuto vero del campo quando i due divergono. Chiamato prima di ogni
+     * richiesta, quindi il server riceve sempre quello che c'e' scritto a schermo, da chiunque sia
+     * stato scritto.
+     */
+    _syncValueFromElement : function() {
+      if( this.isDisposed() || this._inputElement == null || this._inValueProperty ) {
+        return;
+      }
+      if( this._inputElement.value !== this.getValue() ) {
+        this._updateValueProperty();
       }
     },
 
