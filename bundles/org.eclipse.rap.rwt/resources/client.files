@@ -245,6 +245,10 @@ rwt/remote/handler/ClientMessagesHandler.js
 rwt/remote/handler/JavaScriptExecutorHandler.js
 rwt/client/UrlLauncher.js
 rwt/remote/handler/UrlLauncherHandler.js
+rwt/client/UrlNavigator.js
+rwt/remote/handler/UrlNavigatorHandler.js
+rwt/client/SessionShutdown.js
+rwt/remote/handler/SessionShutdownHandler.js
 rwt/client/JavaScriptLoader.js
 rwt/remote/handler/JavaScriptLoaderHandler.js
 rwt/client/ClientFileLoader.js

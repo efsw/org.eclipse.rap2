@@ -24,8 +24,10 @@ import org.eclipse.rap.rwt.client.service.ClientService;
 import org.eclipse.rap.rwt.client.service.ExitConfirmation;
 import org.eclipse.rap.rwt.client.service.JavaScriptExecutor;
 import org.eclipse.rap.rwt.client.service.JavaScriptLoader;
+import org.eclipse.rap.rwt.client.service.SessionShutdown;
 import org.eclipse.rap.rwt.client.service.StartupParameters;
 import org.eclipse.rap.rwt.client.service.UrlLauncher;
+import org.eclipse.rap.rwt.client.service.UrlNavigator;
 import org.eclipse.rap.rwt.internal.client.BrowserNavigationImpl;
 import org.eclipse.rap.rwt.internal.client.ClientFileLoaderImpl;
 import org.eclipse.rap.rwt.internal.client.ClientFileUploaderImpl;
@@ -36,8 +38,10 @@ import org.eclipse.rap.rwt.internal.client.ConnectionMessagesImpl;
 import org.eclipse.rap.rwt.internal.client.ExitConfirmationImpl;
 import org.eclipse.rap.rwt.internal.client.JavaScriptExecutorImpl;
 import org.eclipse.rap.rwt.internal.client.JavaScriptLoaderImpl;
+import org.eclipse.rap.rwt.internal.client.SessionShutdownImpl;
 import org.eclipse.rap.rwt.internal.client.StartupParametersImpl;
 import org.eclipse.rap.rwt.internal.client.UrlLauncherImpl;
+import org.eclipse.rap.rwt.internal.client.UrlNavigatorImpl;
 import org.eclipse.rap.rwt.internal.client.WebClientMessages;
 import org.eclipse.rap.rwt.internal.resources.JavaScriptModuleLoader;
 import org.eclipse.rap.rwt.internal.resources.JavaScriptModuleLoaderImpl;
@@ -209,6 +213,10 @@ public class WebClient implements Client {
       result = ( T )getServiceImpl( JavaScriptLoaderImpl.class );
     } else if( type == UrlLauncher.class ) {
       result = ( T )getServiceImpl( UrlLauncherImpl.class );
+    } else if( type == UrlNavigator.class ) {
+      result = ( T )getServiceImpl( UrlNavigatorImpl.class );
+    } else if( type == SessionShutdown.class ) {
+      result = ( T )getServiceImpl( SessionShutdownImpl.class );
     } else if( type == JavaScriptModuleLoader.class ) {
       result = ( T )getServiceImpl( JavaScriptModuleLoaderImpl.class );
     } else if( type == BrowserNavigation.class ) {

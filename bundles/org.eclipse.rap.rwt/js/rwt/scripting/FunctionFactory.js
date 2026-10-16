@@ -16,30 +16,12 @@ rwt.define( "rwt.scripting", {} );
 // TODO [rst] Define directly using rwt.define, remove surrounding function scope
 rwt.scripting.FunctionFactory = {
 
+  // ClientListener and ClientFunction turn source sent by the server into a function, which takes
+  // "eval" and therefore a content security policy with 'unsafe-eval'. Nothing in this product
+  // uses them - a listener that has to run in the client is written in a page and reached with
+  // Browser#call - so the factory refuses instead of keeping that door open for everybody.
   createFunction : function( functionScript, name ) {
-    var result;
-    var code = [
-      functionScript,
-      "\n\n",
-      "typeof ",
-      name,
-      " === \"undefined\" ? null : ",
-      name,
-      ";" ];
-    try {
-      result = this._secureEval.apply( window, [ code.join( "" ) ] );
-    } catch( ex ) {
-      var msg = "Could not parse Script for " + name + ":" + ( ex.message ? ex.message : ex );
-      throw new Error( msg );
-    }
-    if( typeof result !== "function" ) {
-      throw new Error( "Script does not define a function " + name );
-    }
-    return result;
-  },
-
-  _secureEval : function() {
-    return eval( arguments[ 0 ] );
+    throw new Error( "Client scripting is disabled: cannot create the function " + name + "." );
   }
 
 };
