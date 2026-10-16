@@ -61,6 +61,9 @@ public final class BrowserLCA extends WidgetLCA<Browser> {
   private static final String PARAM_PROGRESS_LISTENER = "Progress";
   private static final String PARAM_SCRIPT = "script";
   private static final String METHOD_EVALUATE = "evaluate";
+  private static final String PARAM_CALL_FUNCTION = "functionName";
+  private static final String PARAM_CALL_ARGUMENTS = "arguments";
+  private static final String METHOD_CALL = "callFunction";
   private static final String PARAM_FUNCTIONS = "functions";
   private static final String METHOD_CREATE_FUNCTIONS = "createFunctions";
   private static final String METHOD_DESTROY_FUNCTIONS = "destroyFunctions";
@@ -145,11 +148,22 @@ public final class BrowserLCA extends WidgetLCA<Browser> {
 
   private static void renderEvaluate( Browser browser ) {
     IBrowserAdapter adapter = browser.getAdapter( IBrowserAdapter.class );
-    final String executeScript = adapter.getExecuteScript();
-    boolean executePending = adapter.getExecutePending();
-    if( executeScript != null && !executePending ) {
+    if( adapter.getExecutePending() ) {
+      return;
+    }
+    String executeScript = adapter.getExecuteScript();
+    if( executeScript != null ) {
       JsonObject parameters = new JsonObject().add( PARAM_SCRIPT, executeScript );
       getRemoteObject( browser ).call( METHOD_EVALUATE, parameters );
+      adapter.setExecutePending( true );
+      return;
+    }
+    String callFunction = adapter.getCallFunction();
+    if( callFunction != null ) {
+      JsonObject parameters = new JsonObject()
+        .add( PARAM_CALL_FUNCTION, callFunction )
+        .add( PARAM_CALL_ARGUMENTS, adapter.getCallArguments() );
+      getRemoteObject( browser ).call( METHOD_CALL, parameters );
       adapter.setExecutePending( true );
     }
   }

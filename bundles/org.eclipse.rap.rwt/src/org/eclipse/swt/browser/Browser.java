@@ -16,6 +16,7 @@ import static org.eclipse.rap.rwt.internal.service.ContextProvider.getApplicatio
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.rap.json.JsonArray;
 import org.eclipse.rap.rwt.internal.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.internal.lifecycle.SimpleLifeCycle;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCA;
@@ -74,6 +75,8 @@ public class Browser extends Composite {
   private String html;
   private boolean urlChanged;
   private String executeScript;
+  private String callFunction;
+  private JsonArray callArguments;
   private Boolean executeResult;
   private boolean executePending;
   private Object evaluateResult;
@@ -255,9 +258,7 @@ public class Browser extends Composite {
     if( script == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
-    if( executeScript != null ) {
-      throw new IllegalStateException( "Another script is already pending" );
-    }
+    checkNothingPending();
     executeScript = script;
     executeResult = null;
     while( executeResult == null ) {
@@ -373,6 +374,48 @@ public class Browser extends Composite {
     ParamCheck.notNull( script, "script" );
     ParamCheck.notNull( browserCallback, "browserCallback" );
     evaluateNonBlocking( script, browserCallback );
+  }
+
+  /**
+   * Calls a function of the document displayed by this browser, passing the given arguments, and
+   * notifies the <code>browserCallback</code> when the result is available.
+   * <p>
+   * Unlike {@link #evaluate(String, BrowserCallback)} this method sends no source code to the
+   * client: the function name is looked up in the document and applied to the arguments, which
+   * travel as JSON values. Nothing the caller passes can therefore turn into code, and the client
+   * needs no <code>eval</code> to run it - which is what allows a content security policy without
+   * <code>'unsafe-eval'</code>.
+   * </p>
+   * <p>
+   * The name may be qualified with dots to reach a function held by an object of the document, as
+   * in <code>chart.refresh</code>. The function is applied to the object that holds it, so that
+   * <code>this</code> means inside the call what it means when the document calls the function
+   * itself.
+   * </p>
+   * <p>
+   * This method will throw an IllegalStateException if called while another script or call is
+   * still pending to be executed.
+   * </p>
+   *
+   * @param functionName the name of the function to call, must not be <code>null</code>.
+   * @param arguments the arguments to apply the function to, must not be <code>null</code>.
+   * @param browserCallback the callback to be notified when the result of the call is available,
+   * must not be <code>null</code>.
+   *
+   * @exception IllegalStateException when another script is already being executed.
+   *
+   * @see BrowserCallback
+   * @rwtextension This method is not available in SWT.
+   */
+  public void call( String functionName, JsonArray arguments, BrowserCallback browserCallback ) {
+    ParamCheck.notNull( functionName, "functionName" );
+    ParamCheck.notNull( arguments, "arguments" );
+    ParamCheck.notNull( browserCallback, "browserCallback" );
+    checkWidget();
+    checkNothingPending();
+    this.browserCallback = browserCallback;
+    callFunction = functionName;
+    callArguments = arguments;
   }
 
   /**
@@ -596,6 +639,8 @@ public class Browser extends Composite {
     executeResult = Boolean.FALSE;
     evaluateResult = null;
     executeScript = null;
+    callFunction = null;
+    callArguments = null;
     executePending = false;
   }
 
@@ -641,6 +686,8 @@ public class Browser extends Composite {
           }
           browserCallback = null;
           executeScript = null;
+          callFunction = null;
+          callArguments = null;
           executePending = false;
         }
       }
@@ -649,11 +696,15 @@ public class Browser extends Composite {
 
   private void evaluateNonBlocking( String script, BrowserCallback browserCallback ) {
     checkWidget();
-    if( executeScript != null ) {
-      throw new IllegalStateException( "Another script is already pending" );
-    }
+    checkNothingPending();
     this.browserCallback = browserCallback;
     executeScript = prepareScript( script );
+  }
+
+  private void checkNothingPending() {
+    if( executeScript != null || callFunction != null ) {
+      throw new IllegalStateException( "Another script is already pending" );
+    }
   }
 
   private static SWTException createException() {
@@ -682,6 +733,16 @@ public class Browser extends Composite {
     @Override
     public String getExecuteScript() {
       return executeScript;
+    }
+
+    @Override
+    public String getCallFunction() {
+      return callFunction;
+    }
+
+    @Override
+    public JsonArray getCallArguments() {
+      return callArguments;
     }
 
     @Override

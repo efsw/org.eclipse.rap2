@@ -148,6 +148,45 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
       } catch( ex ) {
         success = false;
       }
+      this._sendEvaluationResult( success, result );
+    },
+
+    // Calls a function of the document by name, with arguments that travelled as JSON values.
+    // Nothing that arrives here is read as source code, so this is the path that works under a
+    // content security policy without "unsafe-eval".
+    callFunction : function( name, args ) {
+      this._checkIframeAccess();
+      var success = true;
+      var result = null;
+      try {
+        result = this._parseEvalResult( this._applyFunction( name, args ) );
+      } catch( ex ) {
+        success = false;
+      }
+      this._sendEvaluationResult( success, result );
+    },
+
+    // Resolves a name, dots included ("chart.refresh"), against the document and applies the
+    // function to the object that holds it: "this" then means inside the call what it means when
+    // the document calls the function itself.
+    _applyFunction : function( name, args ) {
+      var holder = this.getContentWindow();
+      var func = holder;
+      var parts = name.split( "." );
+      for( var i = 0; i < parts.length; i++ ) {
+        holder = func;
+        func = holder[ parts[ i ] ];
+        if( func == null ) {
+          throw new Error( "Unknown function \"" + name + "\"." );
+        }
+      }
+      if( typeof func !== "function" ) {
+        throw new Error( "\"" + name + "\" is not a function." );
+      }
+      return func.apply( holder, args ? args : [] );
+    },
+
+    _sendEvaluationResult : function( success, result ) {
       var connection = rwt.remote.Connection.getInstance();
       var id = rwt.remote.ObjectRegistry.getId( this );
       var method = success ? "evaluationSucceeded" : "evaluationFailed";
@@ -309,15 +348,18 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
 
     // [if] This wrapper function is a workaround for bug 332313
     _createFunctionWrapper : function( name ) {
-      var script = [];
-      script.push( "window." + name + " = function(){" );
-      script.push( "  var result = " + name + "_impl.apply( window, arguments );" );
-      script.push( "  if( result.error ) {" );
-      script.push( "    throw new Error( result.error );" );
-      script.push( "  }" );
-      script.push( "  return result.result;" );
-      script.push( "}");
-      this._eval( script.join( "" ) );
+      var win = this.getContentWindow();
+      var impl = win[ name + "_impl" ];
+      win[ name ] = function() {
+        var result = impl.apply( win, arguments );
+        if( result.error ) {
+          // the document's own Error, as the wrapper built by eval used to raise: code in the page
+          // that tests the failure against Error keeps recognizing it
+          var ErrorType = win.Error || Error;
+          throw new ErrorType( result.error );
+        }
+        return result.result;
+      };
     },
 
     destroyFunction :function( name ) {
@@ -325,10 +367,8 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
       var win = this.getContentWindow();
       if( win != null ) {
         try {
-          var script = [];
-          script.push( "delete window." +  name + ";" );
-          script.push( "delete window." +  name + "_impl;" );
-          this._eval( script.join( "" ) );
+          delete win[ name ];
+          delete win[ name + "_impl" ];
         } catch( e ) {
           throw new Error( "Unable to destroy function: " + name + " error: " + e );
         }

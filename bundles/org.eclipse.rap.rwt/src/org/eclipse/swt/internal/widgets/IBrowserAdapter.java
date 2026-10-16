@@ -11,6 +11,7 @@
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets;
 
+import org.eclipse.rap.json.JsonArray;
 import org.eclipse.swt.browser.BrowserFunction;
 
 public interface IBrowserAdapter {
@@ -18,6 +19,8 @@ public interface IBrowserAdapter {
   String getText();
 
   String getExecuteScript();
+  String getCallFunction();
+  JsonArray getCallArguments();
   void setExecuteResult( boolean executeResult, Object evalResult );
   void setExecutePending( boolean executePending );
   boolean getExecutePending();

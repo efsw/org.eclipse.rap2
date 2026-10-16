@@ -58,6 +58,7 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Browser", {
 
   methods : [
     "evaluate",
+    "callFunction",
     "destroyFunctions",
     "createFunctions"
   ],
@@ -65,6 +66,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Browser", {
   methodHandler : {
     "evaluate" : function( widget, properties ) {
       widget.execute( properties.script );
+    },
+    "callFunction" : function( widget, properties ) {
+      widget.callFunction( properties.functionName, properties.arguments );
     },
     "createFunctions" : function( widget, properties ) {
       var functions = properties.functions;
