@@ -39,6 +39,7 @@ import org.eclipse.rap.rwt.internal.service.ServiceStore;
 import org.eclipse.rap.rwt.remote.RemoteObject;
 import org.eclipse.rap.rwt.service.ResourceManager;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.BrowserFunction;
 import org.eclipse.swt.internal.events.EventTypes;
 import org.eclipse.swt.internal.widgets.IBrowserAdapter;
 import org.eclipse.swt.internal.widgets.WidgetRemoteAdapter;
@@ -65,6 +66,7 @@ public final class BrowserLCA extends WidgetLCA<Browser> {
   private static final String PARAM_CALL_ARGUMENTS = "arguments";
   private static final String METHOD_CALL = "callFunction";
   private static final String PARAM_FUNCTIONS = "functions";
+  private static final String PARAM_DEFERRED_FUNCTIONS = "deferred";
   private static final String METHOD_CREATE_FUNCTIONS = "createFunctions";
   private static final String METHOD_DESTROY_FUNCTIONS = "destroyFunctions";
   private static final String PARAM_FUNCTION_RESULT = "functionResult";
@@ -205,10 +207,25 @@ public final class BrowserLCA extends WidgetLCA<Browser> {
     String id = WidgetUtil.getId( browser );
     String[] functions = ( String[] )serviceStore.getAttribute( FUNCTIONS_TO_CREATE + id );
     if( functions != null ) {
+      JsonArray deferred = new JsonArray();
+      for( String function : functions ) {
+        deferred.add( isDeferredFunction( browser, function ) );
+      }
       JsonObject parameters = new JsonObject()
-        .add( PARAM_FUNCTIONS, JsonUtil.createJsonArray( functions ) );
+        .add( PARAM_FUNCTIONS, JsonUtil.createJsonArray( functions ) )
+        .add( PARAM_DEFERRED_FUNCTIONS, deferred );
       getRemoteObject( browser ).call( METHOD_CREATE_FUNCTIONS, parameters );
     }
+  }
+
+  private static boolean isDeferredFunction( Browser browser, String name ) {
+    IBrowserAdapter adapter = browser.getAdapter( IBrowserAdapter.class );
+    for( BrowserFunction function : adapter.getBrowserFunctions() ) {
+      if( name.equals( function.getName() ) ) {
+        return function.isDeferred();
+      }
+    }
+    return false;
   }
 
   private static void destroyBrowserFunctions( Browser browser ) {

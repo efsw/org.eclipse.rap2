@@ -43,6 +43,7 @@ public class BrowserFunction {
   Browser browser;
   String name;
   boolean disposed;
+  boolean deferred;
 
   /**
    * Constructs a new instance of this class, which will be invokable
@@ -90,6 +91,46 @@ public class BrowserFunction {
     if( create ) {
       browser.createFunction( this );
     }
+  }
+
+  /**
+   * Marks this function as one the page does not wait for, which lets the client hold its calls
+   * back until the connection is free.
+   * <p>
+   * A browser function is a synchronous request. The client holds back an asynchronous request
+   * while another one is in flight, but it sends a synchronous one anyway, with the next counter:
+   * the server receives it out of sequence, answers with an invalid request counter, and the
+   * session never realigns. A click or a key pressed while the application is refreshing a form is
+   * enough for that to happen.
+   * </p>
+   * <p>
+   * A function that gives the page nothing back can wait instead, and that is what this flag says:
+   * its calls are queued in the client and leave in the order they arrived, as soon as the
+   * connection is free. The page gets <code>undefined</code> immediately, so declaring a function
+   * deferred when the page does read its result is a mistake the framework cannot catch.
+   * </p>
+   * <p>
+   * It has to be set in the same request that creates the function: later the client has already
+   * been told how to call it.
+   * </p>
+   *
+   * @param deferred whether the client may hold back the calls to this function
+   *
+   * @rwtextension This method is not available in SWT.
+   */
+  public void setDeferred( boolean deferred ) {
+    this.deferred = deferred;
+  }
+
+  /**
+   * Returns whether the client may hold back the calls to this function.
+   *
+   * @see #setDeferred(boolean)
+   *
+   * @rwtextension This method is not available in SWT.
+   */
+  public boolean isDeferred() {
+    return deferred;
   }
 
   /**

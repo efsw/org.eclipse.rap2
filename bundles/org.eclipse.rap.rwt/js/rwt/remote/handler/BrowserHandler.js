@@ -72,8 +72,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Browser", {
     },
     "createFunctions" : function( widget, properties ) {
       var functions = properties.functions;
+      var deferred = properties.deferred;
       for( var i = 0; i < functions.length; i++ ) {
-        widget.createFunction( functions[ i ] );
+        widget.createFunction( functions[ i ], deferred ? deferred[ i ] === true : false );
       }
     },
     "destroyFunctions" : function( widget, properties ) {

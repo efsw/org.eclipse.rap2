@@ -17,6 +17,8 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
   construct : function() {
     this.base( arguments );
     this._browserFunctions = {};
+    this._deferredCalls = [];
+    this._deferredCallsTimer = null;
     // TODO [rh] preliminary workaround to make Browser accessible by tab
     this.setTabIndex( 1 );
     this.setSelectable( true );
@@ -50,6 +52,10 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
   },
 
   statics : {
+
+    // una coda piu' lunga di cosi' vuol dire che il server non risponde: le chiamate piu' vecchie
+    // si scartano, perche' nessuno le sta aspettando
+    MAX_DEFERRED_CALLS : 100,
 
     getDomain : function( url ) {
       var domain = null;
@@ -137,18 +143,14 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
       }
     },
 
-    execute : function( script ) {
-      // NOTE [tb] : For some very strange reason the access check must not be done directly
-      // before the try-catch for the ipad to recognize the error is may throw.
-      this._checkIframeAccess();
-      var success = true;
-      var result = null;
-      try {
-        result = this._parseEvalResult( this._eval( script ) );
-      } catch( ex ) {
-        success = false;
+    // Running source written by the server is what "eval" is for, and a content security policy
+    // without 'unsafe-eval' forbids exactly that. The same thing is said as a call - a name and
+    // arguments, resolved against the document - so there is nothing left here to run.
+    execute : function() {
+      if( window.console && window.console.error ) {
+        window.console.error( "Browser#evaluate is disabled: use Browser#call instead." );
       }
-      this._sendEvaluationResult( success, result );
+      this._sendEvaluationResult( false, null );
     },
 
     // Calls a function of the document by name, with arguments that travelled as JSON values.
@@ -253,15 +255,6 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
       throw new Error( msg );
     },
 
-    _eval : function( script ) {
-      var win = this.getContentWindow();
-      if( !win[ "eval" ] && win[ "execScript" ] ) {
-        // Workaround for IE bug, see: http://www.thismuchiknow.co.uk/?p=25
-        win.execScript( "null;", "JScript" );
-      }
-      return win[ "eval" ]( script );
-    },
-
     _parseEvalResult : function( value ) {
       var result = null;
       var win = this.getContentWindow();
@@ -277,13 +270,13 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
       return result;
     },
 
-    createFunction : function( name ) {
-      this._browserFunctions[ name ] = true;
+    createFunction : function( name, deferred ) {
+      this._browserFunctions[ name ] = deferred === true;
       this._checkIframeAccess();
       if( this.isLoaded() ) {
         try {
           this._createFunctionImpl( name );
-          this._createFunctionWrapper( name );
+          this._createFunctionWrapper( name, deferred === true );
         } catch( e ) {
           var msg = "Unable to create function: \"" + name + "\".\n" + e;
           if( rwt.remote.EventUtil.getSuspended() ) {
@@ -300,8 +293,10 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
       // this function will not be triggered due to the lack of a loading event.
       // That also means that this is the only case were creating a browser
       // function in a cross-domain scenario silently fails.
+      // the page is another one now: the calls still queued belong to the one before it
+      this._deferredCalls = [];
       for( var name in this._browserFunctions ) {
-        this.createFunction( name );
+        this.createFunction( name, this._browserFunctions[ name ] );
       }
     },
 
@@ -347,10 +342,15 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
     },
 
     // [if] This wrapper function is a workaround for bug 332313
-    _createFunctionWrapper : function( name ) {
+    _createFunctionWrapper : function( name, deferred ) {
       var win = this.getContentWindow();
       var impl = win[ name + "_impl" ];
+      var that = this;
       win[ name ] = function() {
+        if( deferred ) {
+          that._callDeferred( impl, arguments );
+          return undefined;
+        }
         var result = impl.apply( win, arguments );
         if( result.error ) {
           // the document's own Error, as the wrapper built by eval used to raise: code in the page
@@ -360,6 +360,71 @@ rwt.qx.Class.define( "rwt.widgets.Browser", {
         }
         return result.result;
       };
+    },
+
+    /*
+     * A browser function is a SYNCHRONOUS request. The client holds back an asynchronous request
+     * while another one is in flight, but it sends a synchronous one anyway, with the next
+     * counter: the server receives it out of sequence, answers with an invalid request counter,
+     * and the session never realigns. A click, a map event or a key pressed while the application
+     * is refreshing a form is enough.
+     *
+     * A function declared deferred gives the page nothing back, so it can wait: its calls are
+     * queued and leave in the order they arrived, as soon as the connection is free.
+     */
+    _callDeferred : function( impl, args ) {
+      var callArguments = Array.prototype.slice.call( args );
+      if( this._deferredCalls.length === 0 && !this._isRequestPending() ) {
+        var result = impl.apply( this.getContentWindow(), callArguments );
+        if( !result || !result.error ) {
+          return;
+        }
+        // another browser function is still running: this call waits in the queue like the others
+      }
+      if( this._deferredCalls.length >= rwt.widgets.Browser.MAX_DEFERRED_CALLS ) {
+        this._deferredCalls.shift();
+      }
+      this._deferredCalls.push( { "impl" : impl, "args" : callArguments, "tries" : 0 } );
+      this._scheduleDeferredCalls( 0 );
+    },
+
+    _scheduleDeferredCalls : function( delay ) {
+      if( this._deferredCallsTimer !== null ) {
+        return;
+      }
+      var that = this;
+      this._deferredCallsTimer = window.setTimeout( function() {
+        that._deferredCallsTimer = null;
+        that._flushDeferredCalls();
+      }, delay );
+    },
+
+    _flushDeferredCalls : function() {
+      if( this.isDisposed() || !this._isContentAccessible() ) {
+        return;
+      }
+      while( this._deferredCalls.length > 0 ) {
+        if( this._isRequestPending() ) {
+          this._scheduleDeferredCalls( 30 );
+          return;
+        }
+        var item = this._deferredCalls.shift();
+        var result = item.impl.apply( this.getContentWindow(), item.args );
+        if( result && result.error ) {
+          // another browser function is still running: try again for a while, then the call is
+          // dropped - the session is not
+          item.tries++;
+          if( item.tries < 5 ) {
+            this._deferredCalls.unshift( item );
+            this._scheduleDeferredCalls( 100 );
+            return;
+          }
+        }
+      }
+    },
+
+    _isRequestPending : function() {
+      return rwt.remote.Connection.getInstance()._requestPending === true;
     },
 
     destroyFunction :function( name ) {
