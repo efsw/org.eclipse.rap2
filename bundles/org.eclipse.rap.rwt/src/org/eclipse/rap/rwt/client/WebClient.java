@@ -184,6 +184,13 @@ public class WebClient implements Client {
    * <p>
    * The client does not evaluate code sent as text, so "script-src" does not need 'unsafe-eval'.
    * </p>
+   * <p>
+   * The policy can also be set as an attribute of the application context with this name
+   * (<code>ApplicationContext#setAttribute( WebClient.CSP, policy )</code>): it then takes the
+   * place of the entry point property. It is the way to complete a policy with what the application
+   * knows only after it has started, since the entry point properties are fixed when the entry
+   * point is registered.
+   * </p>
    *
    * @see #CSP_REPORT_ONLY
    * @see Application#addEntryPoint(String, Class, Map)
@@ -200,7 +207,8 @@ public class WebClient implements Client {
    * blocked. It is the way to try a stricter policy on a running application before enforcing it.
    * <p>
    * It can be used together with {@link #CSP}: the browser enforces one and reports on the other.
-   * "nonce-" is completed with the same value as in {@link #CSP}.
+   * "nonce-" is completed with the same value as in {@link #CSP}. Like {@link #CSP}, it can also be
+   * set as an attribute of the application context.
    * </p>
    *
    * @see #CSP

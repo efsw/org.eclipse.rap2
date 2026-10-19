@@ -99,12 +99,24 @@ public class StartupPage {
   }
 
   void setContentSecurityPolicy( HttpServletResponse response, String nonceValue ) {
-    Map<String, String> properties = getCurrentEntryPointProperties();
-    setPolicyHeader( response, "Content-Security-Policy", properties.get( WebClient.CSP ), nonceValue );
+    setPolicyHeader( response, "Content-Security-Policy", getPolicy( WebClient.CSP ), nonceValue );
     setPolicyHeader( response,
                      "Content-Security-Policy-Report-Only",
-                     properties.get( WebClient.CSP_REPORT_ONLY ),
+                     getPolicy( WebClient.CSP_REPORT_ONLY ),
                      nonceValue );
+  }
+
+  /*
+   * A policy set as an attribute of the application context takes the place of the entry point
+   * property: the properties are fixed when the entry point is registered, the attribute can be
+   * set later, once the application knows what its pages need.
+   */
+  private String getPolicy( String name ) {
+    Object attribute = applicationContext.getAttribute( name );
+    if( attribute instanceof String ) {
+      return ( String )attribute;
+    }
+    return getCurrentEntryPointProperties().get( name );
   }
 
   private static void setPolicyHeader( HttpServletResponse response,

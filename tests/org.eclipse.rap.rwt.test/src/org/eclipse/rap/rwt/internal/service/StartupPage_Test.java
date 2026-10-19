@@ -94,6 +94,18 @@ public class StartupPage_Test {
   }
 
   @Test
+  public void testSetResponseHeaders_withContentSecurityPolicyAttribute() {
+    registerEntryPoint( WebClient.CSP, "script-src 'nonce-';" );
+    getApplicationContext().setAttribute( WebClient.CSP, "script-src 'nonce-'; frame-src 'self';" );
+    startupPage.activate();
+
+    startupPage.setContentSecurityPolicy( response, "abc" );
+
+    assertEquals( "script-src 'nonce-abc'; frame-src 'self';",
+                  response.getHeader( "Content-Security-Policy" ) );
+  }
+
+  @Test
   public void testSetResponseHeaders_withReportOnlyContentSecurityPolicy() {
     registerEntryPoint( WebClient.CSP_REPORT_ONLY, "style-src 'self' 'nonce-';" );
     startupPage.activate();
