@@ -15,6 +15,24 @@ rwt.qx.Class.define( "rwt.html.StyleSheet", {
 
   statics : {
 
+    _nonce : undefined,
+
+    /**
+     * Returns the nonce the server gave to the scripts of the page, or null when there is none.
+     * The browser hides the nonce attribute once the page is loaded, but keeps it in the property.
+     */
+    _getNonce : function() {
+      var StyleSheet = rwt.html.StyleSheet;
+      if( StyleSheet._nonce === undefined ) {
+        StyleSheet._nonce = null;
+        var scripts = document.getElementsByTagName( "script" );
+        for( var i = 0; i < scripts.length && !StyleSheet._nonce; i++ ) {
+          StyleSheet._nonce = scripts[ i ].nonce || scripts[ i ].getAttribute( "nonce" ) || null;
+        }
+      }
+      return StyleSheet._nonce;
+    },
+
     /**
      * Creates a new Stylesheet node and append it to the document.
      */
@@ -31,6 +49,12 @@ rwt.qx.Class.define( "rwt.html.StyleSheet", {
       function( vCssText ) {
         var vElement = document.createElement("style");
         vElement.type = "text/css";
+        // The same nonce as the scripts of the page: a content security policy that leaves out
+        // 'unsafe-inline' for style elements accepts a style element only with it
+        var nonce = rwt.html.StyleSheet._getNonce();
+        if( nonce ) {
+          vElement.setAttribute( "nonce", nonce );
+        }
         // Safari 2.0 doesn't like empty stylesheets
         vElement.appendChild(document.createTextNode(vCssText || "body {}"));
         document.getElementsByTagName("head")[0].appendChild(vElement);
