@@ -176,17 +176,40 @@ public class WebClient implements Client {
    * valid string with content security policy directives.
    * <p>
    * <strong>Note:</strong> Use "nonce-" without random value in your "script-src" directive.
-   * The nonce value will be appended dinamically.
+   * The nonce value will be appended dinamically. The same nonce is set on the scripts and on the
+   * style elements of the startup page, so "nonce-" can be used in "style-src" too.
    * Example:
-   * "script-src 'strict-dynamic' 'nonce-' 'unsafe-eval' http: https:; object-src 'none'; base-uri 'none';"
+   * "script-src 'strict-dynamic' 'nonce-'; object-src 'none'; base-uri 'none';"
+   * </p>
+   * <p>
+   * The client does not evaluate code sent as text, so "script-src" does not need 'unsafe-eval'.
    * </p>
    *
+   * @see #CSP_REPORT_ONLY
    * @see Application#addEntryPoint(String, Class, Map)
    * @see Application#addEntryPoint(String, EntryPointFactory, Map)
    *
    * @since 3.21
    */
   public static final String CSP = PREFIX + ".contentSecurityPolicy";
+
+  /**
+   * Entrypoint property name for a content security policy that the browser only reports: it is
+   * sent as "Content-Security-Policy-Report-Only", so a violation is logged in the browser console
+   * (and sent to the "report-uri" or "report-to" endpoint, if the policy names one) but nothing is
+   * blocked. It is the way to try a stricter policy on a running application before enforcing it.
+   * <p>
+   * It can be used together with {@link #CSP}: the browser enforces one and reports on the other.
+   * "nonce-" is completed with the same value as in {@link #CSP}.
+   * </p>
+   *
+   * @see #CSP
+   * @see Application#addEntryPoint(String, Class, Map)
+   * @see Application#addEntryPoint(String, EntryPointFactory, Map)
+   *
+   * @since 4.8
+   */
+  public static final String CSP_REPORT_ONLY = PREFIX + ".contentSecurityPolicyReportOnly";
 
   /**
    * Entrypoint property name to disable the shutdown request. Accepts only "true" as property

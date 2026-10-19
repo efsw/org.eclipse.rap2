@@ -104,13 +104,17 @@ rwt.qx.Class.define( "rwt.runtime.ErrorHandler", {
       if( detailsHyperlink ) {
         this._styleHyperlinkAsButton( detailsHyperlink );
         var self = this;
-        detailsHyperlink.addEventListener( "click", function() { self.showErrorPage( errorDetails ); } );
+        detailsHyperlink.addEventListener( "click", function( event ) {
+          event.preventDefault();
+          self.showErrorPage( errorDetails );
+        } );
       }
     },
 
     _getDetailsAction : function() {
       var detailsMessage = rwt.client.ClientMessages.getInstance().getMessage( "Details" );
-      return "<a id=\"rwt_detailsActionHyperlink\" href=\"javascript:void(0)\">" + detailsMessage + "</a>";
+      // No "javascript:" url: a content security policy without 'unsafe-inline' refuses it
+      return "<a id=\"rwt_detailsActionHyperlink\" href=\"#\">" + detailsMessage + "</a>";
     },
 
     showWaitHint : function() {

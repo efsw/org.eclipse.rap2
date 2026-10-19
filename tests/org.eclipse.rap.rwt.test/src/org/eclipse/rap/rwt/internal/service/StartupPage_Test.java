@@ -90,6 +90,19 @@ public class StartupPage_Test {
     startupPage.setContentSecurityPolicy( response, "abc" );
 
     assertEquals( "script-src 'strict-dynamic' 'nonce-abc';", response.getHeader( "Content-Security-Policy" ) );
+    assertNull( response.getHeader( "Content-Security-Policy-Report-Only" ) );
+  }
+
+  @Test
+  public void testSetResponseHeaders_withReportOnlyContentSecurityPolicy() {
+    registerEntryPoint( WebClient.CSP_REPORT_ONLY, "style-src 'self' 'nonce-';" );
+    startupPage.activate();
+
+    startupPage.setContentSecurityPolicy( response, "abc" );
+
+    assertNull( response.getHeader( "Content-Security-Policy" ) );
+    assertEquals( "style-src 'self' 'nonce-abc';",
+                  response.getHeader( "Content-Security-Policy-Report-Only" ) );
   }
 
   @Test

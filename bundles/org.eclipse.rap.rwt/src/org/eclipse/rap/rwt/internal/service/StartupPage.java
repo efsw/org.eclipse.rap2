@@ -99,9 +99,21 @@ public class StartupPage {
   }
 
   void setContentSecurityPolicy( HttpServletResponse response, String nonceValue ) {
-    String csp = getCurrentEntryPointProperties().get( WebClient.CSP );
-    if( csp != null ) {
-      response.setHeader( "Content-Security-Policy", csp.replaceAll( "nonce-", "nonce-" + nonceValue ) );
+    Map<String, String> properties = getCurrentEntryPointProperties();
+    setPolicyHeader( response, "Content-Security-Policy", properties.get( WebClient.CSP ), nonceValue );
+    setPolicyHeader( response,
+                     "Content-Security-Policy-Report-Only",
+                     properties.get( WebClient.CSP_REPORT_ONLY ),
+                     nonceValue );
+  }
+
+  private static void setPolicyHeader( HttpServletResponse response,
+                                       String header,
+                                       String policy,
+                                       String nonceValue )
+  {
+    if( policy != null ) {
+      response.setHeader( header, policy.replaceAll( "nonce-", "nonce-" + nonceValue ) );
     }
   }
 
