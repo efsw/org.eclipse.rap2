@@ -508,9 +508,14 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
       if( this._moveHandleActive || !this._findMoveHandle( event.getTarget() ) ) {
         return;
       }
+      // attiva PRIMA di partire: _oncaptionmousedown cattura il mouse sul widget che sceglie
+      // _getMoveCaptureWidget, e il movimento poi controlla la cattura sullo stesso widget
+      this._moveHandleActive = true;
       this._oncaptionmousedown( event );
       // la sessione puo' non essere partita: finestra non spostabile, o ingrandita
-      this._moveHandleActive = this._dragSession != null;
+      if( this._dragSession == null ) {
+        this._moveHandleActive = false;
+      }
     },
 
     _onMoveHandleMouseMove : function( event ) {
@@ -521,8 +526,9 @@ rwt.qx.Class.define( "rwt.widgets.Shell", {
 
     _onMoveHandleMouseUp : function( event ) {
       if( this._moveHandleActive ) {
-        this._moveHandleActive = false;
+        // ancora attiva mentre si chiude: la cattura da rilasciare e' quella della finestra
         this._oncaptionmouseup( event );
+        this._moveHandleActive = false;
       }
     },
 
