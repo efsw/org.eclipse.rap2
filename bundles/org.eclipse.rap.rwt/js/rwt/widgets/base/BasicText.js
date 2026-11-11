@@ -317,8 +317,12 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
        * la dichiarazione va riscritta qui sopra, dove il browser la legge. Il valore di partenza
        * resta quello messo in getInputElement, che questa riga sostituisce.
        */
-      if( this._htmlAttributes && this._htmlAttributes[ "autocomplete" ] ) {
-        this._inputElement.setAttribute( "autocomplete", this._htmlAttributes[ "autocomplete" ] );
+      if( this._htmlAttributes ) {
+        for( var attribute in this._htmlAttributes ) {
+          if( this._isInputHtmlAttribute( attribute ) ) {
+            this._inputElement.setAttribute( attribute, this._htmlAttributes[ attribute ] );
+          }
+        }
       }
 
       /*
@@ -520,7 +524,20 @@ rwt.qx.Class.define( "rwt.widgets.base.BasicText", {
     // event handler
 
     _getHtmlAttributeTarget : function( attribute ) {
-      return attribute === "autocomplete" ? this._inputElement : this._element;
+      return this._isInputHtmlAttribute( attribute ) ? this._inputElement : this._element;
+    },
+
+    /*
+     * Gli attributi che parlano del punto in cui l'utente scrive, e non del riquadro che lo
+     * contiene: come compilarlo, quale tastiera aprire su un telefono, come lo annuncia un lettore
+     * di schermo. Scritti sul riquadro, il browser non li leggerebbe mai.
+     */
+    _isInputHtmlAttribute : function( attribute ) {
+      return    attribute === "autocomplete"
+             || attribute === "inputmode"
+             || attribute === "enterkeyhint"
+             || attribute === "autocapitalize"
+             || attribute.indexOf( "aria-" ) === 0;
     },
 
     _oninput : function() {
