@@ -25,6 +25,7 @@ import static org.eclipse.rap.rwt.internal.lifecycle.WidgetUtil.getId;
 import java.io.IOException;
 
 import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCA;
 import org.eclipse.rap.rwt.internal.lifecycle.ControlLCAUtil;
@@ -71,6 +72,7 @@ public final class TextLCA extends WidgetLCA<Text> {
   private static final String PROP_ECHO_CHAR = "echoChar";
   private static final String PROP_MESSAGE = "message";
   private static final String PROP_ORNAMENTS = "ornaments";
+  private static final String PROP_BAR = "bar";
   private static final String PROP_MESSAGE_MARKUP = "messageMarkup";
   private static final String PROP_MESSAGE_ALIGNMENT = "messageAlignment";
   private static final String PROP_MESSAGE_HIDE_ON_FOCUS = "messageHideOnFocus";
@@ -86,6 +88,7 @@ public final class TextLCA extends WidgetLCA<Text> {
     preserveProperty( text, PROP_ECHO_CHAR, getEchoChar( text ) );
     preserveProperty( text, PROP_MESSAGE, text.getMessage() );
     preserveProperty( text, PROP_ORNAMENTS, TextOrnamentUtil.toJson( text ) );
+    preserveProperty( text, PROP_BAR, getBar( text ) );
     preserveProperty( text, PROP_MESSAGE_MARKUP, text.getMessageMarkup() );
     preserveProperty( text, PROP_MESSAGE_ALIGNMENT, getMessageAlignment( text ) );
     preserveProperty( text, PROP_MESSAGE_HIDE_ON_FOCUS, text.getMessageHideOnFocus() );
@@ -113,6 +116,7 @@ public final class TextLCA extends WidgetLCA<Text> {
     renderProperty( text, PROP_MESSAGE_ALIGNMENT, getMessageAlignment( text ), "left" );
     renderProperty( text, PROP_MESSAGE_HIDE_ON_FOCUS, text.getMessageHideOnFocus(), true );
     renderOrnaments( text );
+    renderBar( text );
     renderListenModifyVerify( text );
     renderListenDefaultSelection( text );
     renderClientListeners( text );
@@ -138,6 +142,30 @@ public final class TextLCA extends WidgetLCA<Text> {
     JsonValue newValue = TextOrnamentUtil.toJson( text );
     if( hasChanged( text, PROP_ORNAMENTS, newValue, null ) ) {
       getRemoteObject( text ).set( PROP_ORNAMENTS, newValue == null ? JsonValue.NULL : newValue );
+    }
+  }
+
+  /*
+   * La banda viaggia intera, o non viaggia: e' null quando non c'e' niente da disegnare, che sia
+   * per il lato, lo spessore o il colore.
+   */
+  private static JsonValue getBar( Text text ) {
+    int side = text.getBarSide();
+    if( side == SWT.NONE || text.getBarWidth() == 0 || text.getBarColor().length() == 0 ) {
+      return null;
+    }
+    String name = side == SWT.RIGHT ? "right" : side == SWT.TOP ? "top" : side == SWT.BOTTOM ? "bottom" : "left";
+    return new JsonObject()
+      .add( "side", name )
+      .add( "width", text.getBarWidth() )
+      .add( "length", text.getBarLength() )
+      .add( "color", text.getBarColor() );
+  }
+
+  private static void renderBar( Text text ) {
+    JsonValue newValue = getBar( text );
+    if( hasChanged( text, PROP_BAR, newValue, null ) ) {
+      getRemoteObject( text ).set( PROP_BAR, newValue == null ? JsonValue.NULL : newValue );
     }
   }
 

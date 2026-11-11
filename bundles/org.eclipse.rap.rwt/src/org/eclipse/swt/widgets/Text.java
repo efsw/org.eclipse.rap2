@@ -95,6 +95,10 @@ public class Text extends Scrollable {
   private boolean messageMarkup;
   private int messageAlignment = SWT.LEFT;
   private boolean messageHideOnFocus = true;
+  private int barSide = SWT.NONE;
+  private int barWidth;
+  private int barLength = 100;
+  private String barColor = "";
 
   /**
    * Constructs a new instance of this class given its parent
@@ -499,6 +503,82 @@ public class Text extends Scrollable {
   public boolean getMessageHideOnFocus() {
     checkWidget();
     return messageHideOnFocus;
+  }
+
+  /**
+   * Draws a colored bar along one inner edge of the field: a thin band at the left that says
+   * "this value needs attention", or a line at the bottom that underlines the field.
+   * <p>
+   * The bar sits inside the border, in the padding of the field, and does not move the text: it
+   * is meant to be thin. It is an element of its own, so it stays where it is whatever state the
+   * field goes through.
+   * </p>
+   *
+   * @param side <code>SWT.LEFT</code>, <code>SWT.RIGHT</code>, <code>SWT.TOP</code> or
+   *        <code>SWT.BOTTOM</code>; <code>SWT.NONE</code> for no bar
+   * @param width the thickness of the bar in pixels
+   * @param length how much of the edge the bar covers, in percent: 100 for the whole edge, less
+   *        for a bar centered on it
+   * @param color the color as a css value, an empty string for no bar
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the side is not one of the five</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 4.8
+   */
+  public void setBar( int side, int width, int length, String color ) {
+    checkWidget();
+    if(    side != SWT.NONE && side != SWT.LEFT && side != SWT.RIGHT
+        && side != SWT.TOP && side != SWT.BOTTOM )
+    {
+      error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    this.barSide = side;
+    this.barWidth = Math.max( 0, width );
+    this.barLength = Math.max( 0, Math.min( 100, length ) );
+    this.barColor = color == null ? "" : color;
+  }
+
+  /**
+   * @return the side of the bar, <code>SWT.NONE</code> if there is none
+   * @see #setBar(int, int, int, String)
+   * @since 4.8
+   */
+  public int getBarSide() {
+    checkWidget();
+    return barSide;
+  }
+
+  /**
+   * @see #setBar(int, int, int, String)
+   * @since 4.8
+   */
+  public int getBarWidth() {
+    checkWidget();
+    return barWidth;
+  }
+
+  /**
+   * @see #setBar(int, int, int, String)
+   * @since 4.8
+   */
+  public int getBarLength() {
+    checkWidget();
+    return barLength;
+  }
+
+  /**
+   * @see #setBar(int, int, int, String)
+   * @since 4.8
+   */
+  public String getBarColor() {
+    checkWidget();
+    return barColor;
   }
 
   /**

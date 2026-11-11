@@ -35,11 +35,15 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     this._cancelIconElement = null;
     this._ornaments = [];
     this._ornamentElements = [];
+    this._bar = null;
+    this._barElement = null;
   },
 
   destruct : function() {
     this._ornaments = null;
     this._ornamentElements = null;
+    this._bar = null;
+    this._barElement = null;
     this._messageElement = null;
     this._searchIconElement = null;
     this._cancelIconElement = null;
@@ -132,6 +136,74 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
 
     getOrnaments : function() {
       return this._ornaments;
+    },
+
+    /**
+     * La banda colorata lungo un bordo interno del campo: { side, width, length, color }, oppure
+     * null per toglierla. Sta dentro il bordo, nel rientro del campo, e non sposta il testo.
+     */
+    setBar : function( value ) {
+      this._bar = value ? value : null;
+      this._updateBar();
+    },
+
+    getBar : function() {
+      return this._bar;
+    },
+
+    /*
+     * La banda e' un elemento suo, e non un fondo o un bordo del campo, per una ragione sola: fondo
+     * e bordo il campo se li riscrive a ogni cambio di stato, e una banda scritta li' sparirebbe al
+     * primo passaggio del mouse.
+     */
+    _updateBar : function() {
+      if( !this._isCreated ) {
+        return;
+      }
+      if( this._barElement && this._barElement.parentNode ) {
+        this._barElement.parentNode.removeChild( this._barElement );
+      }
+      this._barElement = null;
+      var bar = this._bar;
+      if( bar == null ) {
+        return;
+      }
+      var element = document.createElement( "div" );
+      element.className = "rwt-Text-bar";
+      var style = element.style;
+      style.position = "absolute";
+      style.pointerEvents = "none";
+      style.backgroundColor = bar.color;
+      // quanto resta libero a ogni capo del bordo, per una banda piu' corta del bordo
+      var inset = ( ( 100 - bar.length ) / 2 ) + "%";
+      // una banda che copre tutto il bordo segue gli angoli del campo, una piu' corta li ha tondi
+      var full = bar.length >= 100;
+      var round = Math.ceil( bar.width / 2 ) + "px";
+      if( bar.side === "top" || bar.side === "bottom" ) {
+        style.left = inset;
+        style.right = inset;
+        style.height = bar.width + "px";
+        style[ bar.side ] = "0px";
+        if( full ) {
+          style[ bar.side === "top" ? "borderTopLeftRadius" : "borderBottomLeftRadius" ] = "inherit";
+          style[ bar.side === "top" ? "borderTopRightRadius" : "borderBottomRightRadius" ] = "inherit";
+        } else {
+          style.borderRadius = round;
+        }
+      } else {
+        style.top = inset;
+        style.bottom = inset;
+        style.width = bar.width + "px";
+        style[ bar.side === "right" ? "right" : "left" ] = "0px";
+        if( full ) {
+          style[ bar.side === "right" ? "borderTopRightRadius" : "borderTopLeftRadius" ] = "inherit";
+          style[ bar.side === "right" ? "borderBottomRightRadius" : "borderBottomLeftRadius" ] = "inherit";
+        } else {
+          style.borderRadius = round;
+        }
+      }
+      this._getTargetNode().insertBefore( element, this._getTargetNode().firstChild );
+      this._barElement = element;
     },
 
     setPasswordMode : function( value ) {
@@ -266,6 +338,7 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       this._inputElement.style.paddingRight = "1px";
       this._updateAllIcons();
       this._updateOrnaments();
+      this._updateBar();
       this._updateMessage();
     },
 
