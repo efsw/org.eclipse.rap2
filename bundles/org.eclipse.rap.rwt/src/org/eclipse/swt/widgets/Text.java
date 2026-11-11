@@ -15,6 +15,7 @@ import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCA;
 import org.eclipse.rap.rwt.internal.textsize.TextSizeUtil;
 import org.eclipse.rap.rwt.internal.theme.Size;
 import org.eclipse.rap.rwt.internal.theme.ThemeAdapter;
+import org.eclipse.rap.rwt.widgets.TextOrnament;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.dnd.Clipboard;
@@ -30,6 +31,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.graphics.FontUtil;
 import org.eclipse.swt.internal.widgets.ITextAdapter;
 import org.eclipse.swt.internal.widgets.textkit.TextLCA;
+import org.eclipse.swt.internal.widgets.textkit.TextOrnamentUtil;
 import org.eclipse.swt.internal.widgets.textkit.TextThemeAdapter;
 
 /**
@@ -89,6 +91,7 @@ public class Text extends Scrollable {
   private int textLimit;
   private final Point selection;
   private char echoChar;
+  private TextOrnament[] ornaments = new TextOrnament[ 0 ];
 
   /**
    * Constructs a new instance of this class given its parent
@@ -401,6 +404,66 @@ public class Text extends Scrollable {
   public String getMessage() {
     checkWidget();
     return message;
+  }
+
+  /**
+   * Sets what the field shows inside its edit area beside the text: icons, short texts, small
+   * buttons. See {@link TextOrnament}.
+   * <p>
+   * The ornaments at the left end and those at the right end keep the order of the list, from
+   * the border of the field towards the text. A multi line field has no ornaments: the list is
+   * kept and ignored.
+   * </p>
+   * <p>
+   * The list is read now: an ornament changed afterwards shows when the list is set again.
+   * </p>
+   *
+   * @param ornaments the ornaments, none to remove them all
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if an ornament is null</li>
+   *    <li>ERROR_INVALID_ARGUMENT - if two ornaments have the same id</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see TextOrnament
+   * @since 4.8
+   */
+  public void setOrnaments( TextOrnament... ornaments ) {
+    checkWidget();
+    TextOrnament[] copy = ornaments == null ? new TextOrnament[ 0 ] : ornaments.clone();
+    for( int i = 0; i < copy.length; i++ ) {
+      if( copy[ i ] == null ) {
+        error( SWT.ERROR_NULL_ARGUMENT );
+      }
+      for( int j = 0; j < i; j++ ) {
+        if( copy[ j ].getId().equals( copy[ i ].getId() ) ) {
+          error( SWT.ERROR_INVALID_ARGUMENT );
+        }
+      }
+    }
+    this.ornaments = copy;
+  }
+
+  /**
+   * Returns the ornaments of the field.
+   *
+   * @return the ornaments, an empty array when there are none
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @see #setOrnaments(TextOrnament...)
+   * @since 4.8
+   */
+  public TextOrnament[] getOrnaments() {
+    checkWidget();
+    return ornaments.clone();
   }
 
   /**
@@ -827,6 +890,11 @@ public class Text extends Scrollable {
       width += searchIconSize.width + cancelIconSize.width;
       height = Math.max( height, searchIconSize.height );
       height = Math.max( height, cancelIconSize.height );
+      // gli ornamenti tolgono spazio al testo: la dimensione preferita li rimette in conto
+      if( ( getStyle() & SWT.MULTI ) == 0 && ornaments.length > 0 ) {
+        width += TextOrnamentUtil.getTotalWidth( this );
+        height = Math.max( height, TextOrnamentUtil.getMaxHeight( this ) );
+      }
     }
     if( width == 0 ) {
       width = DEFAULT_WIDTH;

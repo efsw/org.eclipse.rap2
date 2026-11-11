@@ -25,6 +25,7 @@ import static org.eclipse.rap.rwt.internal.lifecycle.WidgetUtil.getId;
 import java.io.IOException;
 
 import org.eclipse.rap.json.JsonArray;
+import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCA;
 import org.eclipse.rap.rwt.internal.lifecycle.ControlLCAUtil;
 import org.eclipse.rap.rwt.internal.lifecycle.WidgetLCAUtil;
@@ -69,6 +70,7 @@ public final class TextLCA extends WidgetLCA<Text> {
   private static final String PROP_EDITABLE = "editable";
   private static final String PROP_ECHO_CHAR = "echoChar";
   private static final String PROP_MESSAGE = "message";
+  private static final String PROP_ORNAMENTS = "ornaments";
 
   private static final Point ZERO_SELECTION = new Point( 0, 0 );
 
@@ -80,6 +82,7 @@ public final class TextLCA extends WidgetLCA<Text> {
     preserveProperty( text, PROP_EDITABLE, text.getEditable() );
     preserveProperty( text, PROP_ECHO_CHAR, getEchoChar( text ) );
     preserveProperty( text, PROP_MESSAGE, text.getMessage() );
+    preserveProperty( text, PROP_ORNAMENTS, TextOrnamentUtil.toJson( text ) );
   }
 
   @Override
@@ -100,6 +103,7 @@ public final class TextLCA extends WidgetLCA<Text> {
     renderProperty( text, PROP_TEXT_LIMIT, getTextLimit( text ), null );
     renderProperty( text, PROP_ECHO_CHAR, getEchoChar( text ), null );
     renderProperty( text, PROP_MESSAGE, text.getMessage(), "" );
+    renderOrnaments( text );
     renderListenModifyVerify( text );
     renderListenDefaultSelection( text );
     renderClientListeners( text );
@@ -114,6 +118,17 @@ public final class TextLCA extends WidgetLCA<Text> {
     if( changed ) {
       RemoteObject remoteObject = getRemoteObject( text );
       remoteObject.set( PROP_SELECTION, new JsonArray().add( newValue.x ).add( newValue.y ) );
+    }
+  }
+
+  /*
+   * Gli ornamenti viaggiano gia' misurati: confrontare il json intero fa si' che un cambio di
+   * carattere, che cambia le larghezze, li rimandi al client senza che nessuno debba ricordarselo.
+   */
+  private static void renderOrnaments( Text text ) {
+    JsonValue newValue = TextOrnamentUtil.toJson( text );
+    if( hasChanged( text, PROP_ORNAMENTS, newValue, null ) ) {
+      getRemoteObject( text ).set( PROP_ORNAMENTS, newValue == null ? JsonValue.NULL : newValue );
     }
   }
 

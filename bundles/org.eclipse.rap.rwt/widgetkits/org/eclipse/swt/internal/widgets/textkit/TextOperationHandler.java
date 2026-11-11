@@ -21,6 +21,7 @@ import org.eclipse.rap.json.JsonObject;
 import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.lifecycle.ProcessActionRunner;
 import org.eclipse.rap.rwt.internal.protocol.ControlOperationHandler;
+import org.eclipse.rap.rwt.widgets.TextOrnament;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.internal.widgets.ITextAdapter;
@@ -32,6 +33,7 @@ public class TextOperationHandler extends ControlOperationHandler<Text> {
 
   private static final String PROP_TEXT = "text";
   private static final String PROP_SELECTION = "selection";
+  private static final String EVENT_ORNAMENT_SELECTION = "OrnamentSelection";
 
   public TextOperationHandler( Text text ) {
     super( text );
@@ -52,6 +54,8 @@ public class TextOperationHandler extends ControlOperationHandler<Text> {
       handleNotifyDefaultSelection( text, properties );
     } else if( EVENT_MODIFY.equals( eventName ) ) {
       handleNotifyModify();
+    } else if( EVENT_ORNAMENT_SELECTION.equals( eventName ) ) {
+      handleNotifyOrnamentSelection( text, properties );
     } else {
       super.handleNotify( text, eventName, properties );
     }
@@ -147,6 +151,37 @@ public class TextOperationHandler extends ControlOperationHandler<Text> {
    * ignored, Modify event is fired when set text
    */
   public void handleNotifyModify() {
+  }
+
+  /*
+   * PROTOCOL NOTIFY OrnamentSelection
+   *
+   * @param id (String) the id of the ornament that was clicked
+   */
+  public void handleNotifyOrnamentSelection( final Text text, JsonObject properties ) {
+    JsonValue value = properties.get( "id" );
+    if( value == null || !value.isString() ) {
+      return;
+    }
+    final String id = value.asString();
+    for( final TextOrnament ornament : text.getOrnaments() ) {
+      if( ornament.getId().equals( id ) && ornament.getListener() != null ) {
+        // nella fase delle azioni, come ogni altro evento: chi ascolta puo' aprire finestre
+        ProcessActionRunner.add( new Runnable() {
+          @Override
+          public void run() {
+            if( !text.isDisposed() && text.isEnabled() ) {
+              Event event = new Event();
+              event.widget = text;
+              event.display = text.getDisplay();
+              event.type = SWT.Selection;
+              event.text = id;
+              ornament.getListener().handleEvent( event );
+            }
+          }
+        } );
+      }
+    }
   }
 
   private static void setText( Text text, String value ) {

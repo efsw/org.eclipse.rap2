@@ -69,7 +69,8 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Text", {
      * @param {int[]} selection array representing the selection start and end
      */
     "selection",
-    "textLimit"
+    "textLimit",
+    "ornaments"
   ] ),
 
 
@@ -93,6 +94,9 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Text", {
     },
     "textLimit" : function( widget, value ) {
       widget.setMaxLength( value );
+    },
+    "ornaments" : function( widget, value ) {
+      widget.setOrnaments( value );
     }
   } ),
 

@@ -29,9 +29,13 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     this._messageElement = null;
     this._searchIconElement = null;
     this._cancelIconElement = null;
+    this._ornaments = [];
+    this._ornamentElements = [];
   },
 
   destruct : function() {
+    this._ornaments = null;
+    this._ornamentElements = null;
     this._messageElement = null;
     this._searchIconElement = null;
     this._cancelIconElement = null;
@@ -60,6 +64,26 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
 
     getMessage : function() {
       return this._message;
+    },
+
+    /**
+     * Quello che il campo mostra dentro la propria area di edit accanto al testo: icone, testi
+     * brevi, piccoli bottoni. Ogni ornamento arriva gia' misurato dal server -
+     * { id, position, width, image, text, toolTip, style, selectable } - e qui viene solo
+     * disposto: quelli di sinistra dal bordo verso il testo, quelli di destra lo stesso.
+     */
+    setOrnaments : function( value ) {
+      this._ornaments = value ? value : [];
+      this._updateOrnaments();
+      if( this._isCreated ) {
+        this._syncFieldWidth();
+        this._syncFieldLeft();
+        this._layoutMessageX();
+      }
+    },
+
+    getOrnaments : function() {
+      return this._ornaments;
     },
 
     setPasswordMode : function( value ) {
@@ -123,6 +147,30 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
         if( detail != null ) {
           rwt.remote.EventUtil.notifyDefaultSelected( this, 0, 0, 0, 0, detail );
         }
+        this._notifyOrnamentSelection( target );
+      }
+    },
+
+    /*
+     * Il clic su un ornamento va al server col suo id. Non passa da notify() del remote object,
+     * che manda solo gli eventi per cui il server ha dichiarato un ascolto: qui l'ascolto e' gia'
+     * scritto nell'ornamento stesso, ed e' "selectable".
+     */
+    _notifyOrnamentSelection : function( target ) {
+      if( !this.getEnabled() || rwt.remote.EventUtil.getSuspended() ) {
+        return;
+      }
+      for( var i = 0; i < this._ornamentElements.length; i++ ) {
+        var element = this._ornamentElements[ i ];
+        if( element.contains( target ) && element.rwtOrnament.selectable ) {
+          var connection = rwt.remote.Connection.getInstance();
+          var id = rwt.remote.ObjectRegistry.getId( this );
+          connection.getMessageWriter().appendNotify( id, "OrnamentSelection", {
+            "id" : element.rwtOrnament.id
+          } );
+          connection.send();
+          return;
+        }
       }
     },
 
@@ -169,6 +217,7 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       // Fix for bug 306354
       this._inputElement.style.paddingRight = "1px";
       this._updateAllIcons();
+      this._updateOrnaments();
       this._updateMessage();
     },
 
@@ -254,7 +303,9 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       if( this._inputElement ) {
         var width =   this.getInnerWidth()
                     - this._getIconOuterWidth( "search" )
-                    - this._getIconOuterWidth( "cancel" );
+                    - this._getIconOuterWidth( "cancel" )
+                    - this._getOrnamentsOuterWidth( "left" )
+                    - this._getOrnamentsOuterWidth( "right" );
         this._inputElement.style.width = Math.max( 2, width ) + "px";
       }
     },
@@ -262,11 +313,13 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     _syncFieldLeft : function() {
       if( this._inputElement ) {
         var style = this._inputElement.style;
+        // gli ornamenti non si specchiano con la direzione: sinistra resta sinistra
+        var ornaments = this._getOrnamentsOuterWidth( "left" );
         if( this.getDirection() === "rtl" ) {
-          style.marginLeft = "0";
+          style.marginLeft = ornaments + "px";
           style.marginRight = this._getIconOuterWidth( "search" ) + "px";
         } else {
-          style.marginLeft = this._getIconOuterWidth( "search" ) + "px";
+          style.marginLeft = ( this._getIconOuterWidth( "search" ) + ornaments ) + "px";
           style.marginRight = "0";
         }
       }
@@ -298,6 +351,139 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     _layoutAllIcons : function() {
       this._layoutIcon( "search" );
       this._layoutIcon( "cancel" );
+      this._layoutOrnaments();
+    },
+
+    ////////////////////
+    // ornaments support
+
+    /* fra un ornamento e quello che gli sta accanto: lo stesso numero di TextOrnamentUtil.SPACING */
+    _ORNAMENT_SPACING : 6,
+
+    /* fra l'icona e il testo dello stesso ornamento: TextOrnamentUtil.IMAGE_TEXT_GAP */
+    _ORNAMENT_IMAGE_TEXT_GAP : 4,
+
+    _hasOrnaments : function() {
+      return !this._isTextArea() && this._ornaments != null && this._ornaments.length > 0;
+    },
+
+    _getOrnamentsOuterWidth : function( position ) {
+      var result = 0;
+      if( this._hasOrnaments() ) {
+        for( var i = 0; i < this._ornaments.length; i++ ) {
+          if( this._ornaments[ i ].position === position ) {
+            result += this._ornaments[ i ].width + this._ORNAMENT_SPACING;
+          }
+        }
+      }
+      return result;
+    },
+
+    _updateOrnaments : function() {
+      if( !this._isCreated || this._ornamentElements == null ) {
+        return;
+      }
+      for( var i = 0; i < this._ornamentElements.length; i++ ) {
+        var old = this._ornamentElements[ i ];
+        if( old.parentNode ) {
+          old.parentNode.removeChild( old );
+        }
+      }
+      this._ornamentElements = [];
+      if( this._hasOrnaments() ) {
+        for( var j = 0; j < this._ornaments.length; j++ ) {
+          var element = this._createOrnamentElement( this._ornaments[ j ] );
+          this._getTargetNode().insertBefore( element, this._inputElement );
+          this._ornamentElements.push( element );
+        }
+      }
+      this._layoutOrnaments();
+    },
+
+    _createOrnamentElement : function( ornament ) {
+      var element = document.createElement( "div" );
+      element.className = "rwt-Text-ornament";
+      element.rwtOrnament = ornament;
+      var style = element.style;
+      style.position = "absolute";
+      style.top = "0px";
+      style.bottom = "0px";
+      style.display = "flex";
+      style.alignItems = "center";
+      style.justifyContent = "center";
+      style.overflow = "hidden";
+      style.whiteSpace = "nowrap";
+      style.boxSizing = "border-box";
+      style.userSelect = "none";
+      style.width = ornament.width + "px";
+      style.cursor = ornament.selectable ? "pointer" : "default";
+      // di default un ornamento ha la tinta tenue del messaggio a campo vuoto; il suo stile la cambia
+      style.color = this._getMessageStyle().textColor || "";
+      var font = this.getFont();
+      if( font ) {
+        font.renderElement( element );
+      }
+      if( ornament.toolTip ) {
+        element.title = ornament.toolTip;
+      }
+      var image = ornament.image;
+      if( image && image[ 0 ] ) {
+        var icon = document.createElement( "div" );
+        icon.style.flex = "none";
+        icon.style.width = image[ 1 ] + "px";
+        icon.style.height = image[ 2 ] + "px";
+        icon.style.backgroundRepeat = "no-repeat";
+        icon.style.backgroundPosition = "center";
+        if( image[ 0 ].indexOf( "url(" ) === 0 ) {
+          // una forma: e' gia' un'immagine css, e avvolgerla ancora la romperebbe
+          icon.style.backgroundImage = image[ 0 ];
+          icon.style.backgroundSize = "contain";
+        } else {
+          rwt.html.Style.setBackgroundImage( icon, image[ 0 ] );
+        }
+        element.appendChild( icon );
+      }
+      if( ornament.text ) {
+        var text = document.createElement( "span" );
+        text.textContent = ornament.text;
+        if( image && image[ 0 ] ) {
+          text.style.marginLeft = this._ORNAMENT_IMAGE_TEXT_GAP + "px";
+        }
+        element.appendChild( text );
+      }
+      if( ornament.style ) {
+        var declarations = this._parseCssDeclarations( ornament.style );
+        for( var i = 0; i < declarations.length; i++ ) {
+          style.setProperty( declarations[ i ][ 0 ], declarations[ i ][ 1 ], declarations[ i ][ 2 ] );
+        }
+      }
+      return element;
+    },
+
+    /*
+     * Le posizioni si contano dentro il riquadro del campo, bordo escluso: il rientro del campo
+     * prima, poi l'icona del campo di ricerca se c'e', poi gli ornamenti nell'ordine della lista.
+     */
+    _layoutOrnaments : function() {
+      if( this._ornamentElements == null || this._ornamentElements.length === 0 ) {
+        return;
+      }
+      var rtl = this.getDirection() === "rtl";
+      var left = this.getPaddingLeft() + this._getIconOuterWidth( rtl ? "cancel" : "search" );
+      var right = this.getPaddingRight() + this._getIconOuterWidth( rtl ? "search" : "cancel" );
+      for( var i = 0; i < this._ornamentElements.length; i++ ) {
+        var element = this._ornamentElements[ i ];
+        var ornament = element.rwtOrnament;
+        if( ornament.position === "right" ) {
+          element.style.left = "";
+          element.style.right = right + "px";
+          right += ornament.width + this._ORNAMENT_SPACING;
+        } else {
+          element.style.right = "";
+          element.style.left = left + "px";
+          left += ornament.width + this._ORNAMENT_SPACING;
+        }
+      }
     },
 
     _layoutIcon : function( iconId ) {
@@ -438,6 +624,7 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     _applyFont : function( newValue, oldValue ) {
       this.base( arguments, newValue, oldValue );
       this._updateMessageFont();
+      this._updateOrnaments();
     },
 
     _applyDirection : function( value ) {
@@ -494,14 +681,18 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
                     - styleMap.paddingLeft
                     - styleMap.paddingRight
                     - this._getIconOuterWidth( "search" )
-                    - this._getIconOuterWidth( "cancel" );
+                    - this._getIconOuterWidth( "cancel" )
+                    - this._getOrnamentsOuterWidth( "left" )
+                    - this._getOrnamentsOuterWidth( "right" );
         style.width = Math.max( 0, width ) + "px";
         if( this._isTextArea() ) {
           // The text-area padding is hard codded in the appearances
           style.left = "3px";
         } else {
           var leftIcon = this.getDirection() === "rtl" ? "cancel" : "search";
-          style.left = ( this._getIconOuterWidth( leftIcon ) + styleMap.paddingLeft ) + "px";
+          style.left = (   this._getIconOuterWidth( leftIcon )
+                         + this._getOrnamentsOuterWidth( "left" )
+                         + styleMap.paddingLeft ) + "px";
         }
       }
     },
