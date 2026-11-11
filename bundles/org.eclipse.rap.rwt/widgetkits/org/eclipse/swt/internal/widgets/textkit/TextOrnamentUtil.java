@@ -47,7 +47,7 @@ public final class TextOrnamentUtil {
       Font font = text.getFont();
       width += ( width > 0 ? IMAGE_TEXT_GAP : 0 ) + TextSizeUtil.stringExtent( font, ornament.getText() ).x;
     }
-    return width;
+    return width + ornament.getExtraWidth();
   }
 
   /**

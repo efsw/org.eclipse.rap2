@@ -48,6 +48,7 @@ public final class TextOrnament {
   private String toolTipText = "";
   private String style = "";
   private int width = SWT.DEFAULT;
+  private int extraWidth;
   private Listener listener;
 
   /**
@@ -134,9 +135,10 @@ public final class TextOrnament {
   }
 
   /**
-   * Css declarations written on the element of the ornament - a color, a background and a
-   * radius make a pill out of it. They do not change the room the field keeps for it: an
-   * ornament that pads itself says how wide it is with {@link #setWidth(int)}.
+   * Css declarations written on the box that wraps the icon and the text of the ornament - a
+   * color, a background, a radius and a padding make a pill out of it. They do not change the
+   * room the field keeps for it: an ornament that pads itself says how much with
+   * {@link #setExtraWidth(int)}.
    *
    * @param style a css declaration list, or an empty string
    */
@@ -160,6 +162,20 @@ public final class TextOrnament {
 
   public int getWidth() {
     return width;
+  }
+
+  /**
+   * @param extraWidth the room to keep on top of the icon and the text, in pixels: the left and
+   *        right padding of an ornament that draws itself as a pill. Not used with an explicit
+   *        {@link #setWidth(int) width}
+   */
+  public TextOrnament setExtraWidth( int extraWidth ) {
+    this.extraWidth = Math.max( 0, extraWidth );
+    return this;
+  }
+
+  public int getExtraWidth() {
+    return extraWidth;
   }
 
   /**

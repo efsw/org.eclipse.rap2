@@ -413,19 +413,31 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       style.justifyContent = "center";
       style.overflow = "hidden";
       style.whiteSpace = "nowrap";
-      style.boxSizing = "border-box";
       style.userSelect = "none";
       style.width = ornament.width + "px";
       style.cursor = ornament.selectable ? "pointer" : "default";
-      // di default un ornamento ha la tinta tenue del messaggio a campo vuoto; il suo stile la cambia
-      style.color = this._getMessageStyle().textColor || "";
-      var font = this.getFont();
-      if( font ) {
-        font.renderElement( element );
-      }
       if( ornament.toolTip ) {
         element.title = ornament.toolTip;
       }
+      /*
+       * Il posto e la scatola sono due elementi: il posto e' alto quanto il campo e largo quanto
+       * il server ha misurato, la scatola avvolge icona e testo ed e' quella che lo stile veste.
+       * Cosi' una pastiglia e' alta quanto il suo contenuto, non quanto il campo.
+       */
+      var box = document.createElement( "div" );
+      box.className = "rwt-Text-ornament-box";
+      box.style.display = "flex";
+      box.style.alignItems = "center";
+      box.style.maxWidth = "100%";
+      box.style.boxSizing = "border-box";
+      box.style.overflow = "hidden";
+      // di default un ornamento ha la tinta tenue del messaggio a campo vuoto; il suo stile la cambia
+      box.style.color = this._getMessageStyle().textColor || "";
+      var font = this.getFont();
+      if( font ) {
+        font.renderElement( box );
+      }
+      element.appendChild( box );
       var image = ornament.image;
       if( image && image[ 0 ] ) {
         var icon = document.createElement( "div" );
@@ -441,7 +453,7 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
         } else {
           rwt.html.Style.setBackgroundImage( icon, image[ 0 ] );
         }
-        element.appendChild( icon );
+        box.appendChild( icon );
       }
       if( ornament.text ) {
         var text = document.createElement( "span" );
@@ -449,12 +461,12 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
         if( image && image[ 0 ] ) {
           text.style.marginLeft = this._ORNAMENT_IMAGE_TEXT_GAP + "px";
         }
-        element.appendChild( text );
+        box.appendChild( text );
       }
       if( ornament.style ) {
         var declarations = this._parseCssDeclarations( ornament.style );
         for( var i = 0; i < declarations.length; i++ ) {
-          style.setProperty( declarations[ i ][ 0 ], declarations[ i ][ 1 ], declarations[ i ][ 2 ] );
+          box.style.setProperty( declarations[ i ][ 0 ], declarations[ i ][ 1 ], declarations[ i ][ 2 ] );
         }
       }
       return element;
