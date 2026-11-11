@@ -70,7 +70,10 @@ rwt.remote.HandlerRegistry.add( "rwt.widgets.Text", {
      */
     "selection",
     "textLimit",
-    "ornaments"
+    "ornaments",
+    "messageMarkup",
+    "messageAlignment",
+    "messageHideOnFocus"
   ] ),
 
 

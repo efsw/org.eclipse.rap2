@@ -92,6 +92,9 @@ public class Text extends Scrollable {
   private final Point selection;
   private char echoChar;
   private TextOrnament[] ornaments = new TextOrnament[ 0 ];
+  private boolean messageMarkup;
+  private int messageAlignment = SWT.LEFT;
+  private boolean messageHideOnFocus = true;
 
   /**
    * Constructs a new instance of this class given its parent
@@ -404,6 +407,98 @@ public class Text extends Scrollable {
   public String getMessage() {
     checkWidget();
     return message;
+  }
+
+  /**
+   * Says whether the {@link #setMessage(String) message} is markup instead of plain text: spans
+   * with a color, a background, an underlined word. The markup is written as it is, so it is up
+   * to the caller to escape the text it puts inside.
+   *
+   * @param messageMarkup <code>true</code> if the message is markup
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 4.8
+   */
+  public void setMessageMarkup( boolean messageMarkup ) {
+    checkWidget();
+    this.messageMarkup = messageMarkup;
+  }
+
+  /**
+   * @return <code>true</code> if the message is markup
+   * @see #setMessageMarkup(boolean)
+   * @since 4.8
+   */
+  public boolean getMessageMarkup() {
+    checkWidget();
+    return messageMarkup;
+  }
+
+  /**
+   * Sets where the message sits in the empty field. It does not follow the alignment of the
+   * text: a field that aligns its numbers to the right can keep its hint at the left.
+   *
+   * @param alignment <code>SWT.LEFT</code>, <code>SWT.CENTER</code> or <code>SWT.RIGHT</code>
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the alignment is not one of the three</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 4.8
+   */
+  public void setMessageAlignment( int alignment ) {
+    checkWidget();
+    if( alignment != SWT.LEFT && alignment != SWT.CENTER && alignment != SWT.RIGHT ) {
+      error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    this.messageAlignment = alignment;
+  }
+
+  /**
+   * @return <code>SWT.LEFT</code>, <code>SWT.CENTER</code> or <code>SWT.RIGHT</code>
+   * @see #setMessageAlignment(int)
+   * @since 4.8
+   */
+  public int getMessageAlignment() {
+    checkWidget();
+    return messageAlignment;
+  }
+
+  /**
+   * Says when the message of the empty field goes away: as soon as the field takes the focus,
+   * which is the default and what SWT does, or only when the user types the first character,
+   * the way a placeholder behaves on the web.
+   *
+   * @param hideOnFocus <code>false</code> to keep the message until something is typed
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   *
+   * @since 4.8
+   */
+  public void setMessageHideOnFocus( boolean hideOnFocus ) {
+    checkWidget();
+    this.messageHideOnFocus = hideOnFocus;
+  }
+
+  /**
+   * @return <code>true</code> if the message goes away when the field takes the focus
+   * @see #setMessageHideOnFocus(boolean)
+   * @since 4.8
+   */
+  public boolean getMessageHideOnFocus() {
+    checkWidget();
+    return messageHideOnFocus;
   }
 
   /**
@@ -870,7 +965,9 @@ public class Text extends Scrollable {
         wrapWidth = wHint;
       }
       Point extent;
-      Point messageExtent = TextSizeUtil.stringExtent( font, message );
+      // un messaggio a markup si misura per il testo che si legge, non per i tag che lo vestono
+      String messageText = messageMarkup ? message.replaceAll( "<[^>]*>", "" ) : message;
+      Point messageExtent = TextSizeUtil.stringExtent( font, messageText );
       // Single-line text field should have same size as Combo, Spinner, etc.
       if( ( getStyle() & SWT.SINGLE ) != 0 ) {
         extent = TextSizeUtil.stringExtent( font, text );

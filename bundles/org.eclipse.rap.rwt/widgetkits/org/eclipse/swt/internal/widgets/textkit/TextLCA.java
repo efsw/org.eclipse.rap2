@@ -71,6 +71,9 @@ public final class TextLCA extends WidgetLCA<Text> {
   private static final String PROP_ECHO_CHAR = "echoChar";
   private static final String PROP_MESSAGE = "message";
   private static final String PROP_ORNAMENTS = "ornaments";
+  private static final String PROP_MESSAGE_MARKUP = "messageMarkup";
+  private static final String PROP_MESSAGE_ALIGNMENT = "messageAlignment";
+  private static final String PROP_MESSAGE_HIDE_ON_FOCUS = "messageHideOnFocus";
 
   private static final Point ZERO_SELECTION = new Point( 0, 0 );
 
@@ -83,6 +86,9 @@ public final class TextLCA extends WidgetLCA<Text> {
     preserveProperty( text, PROP_ECHO_CHAR, getEchoChar( text ) );
     preserveProperty( text, PROP_MESSAGE, text.getMessage() );
     preserveProperty( text, PROP_ORNAMENTS, TextOrnamentUtil.toJson( text ) );
+    preserveProperty( text, PROP_MESSAGE_MARKUP, text.getMessageMarkup() );
+    preserveProperty( text, PROP_MESSAGE_ALIGNMENT, getMessageAlignment( text ) );
+    preserveProperty( text, PROP_MESSAGE_HIDE_ON_FOCUS, text.getMessageHideOnFocus() );
   }
 
   @Override
@@ -103,6 +109,9 @@ public final class TextLCA extends WidgetLCA<Text> {
     renderProperty( text, PROP_TEXT_LIMIT, getTextLimit( text ), null );
     renderProperty( text, PROP_ECHO_CHAR, getEchoChar( text ), null );
     renderProperty( text, PROP_MESSAGE, text.getMessage(), "" );
+    renderProperty( text, PROP_MESSAGE_MARKUP, text.getMessageMarkup(), false );
+    renderProperty( text, PROP_MESSAGE_ALIGNMENT, getMessageAlignment( text ), "left" );
+    renderProperty( text, PROP_MESSAGE_HIDE_ON_FOCUS, text.getMessageHideOnFocus(), true );
     renderOrnaments( text );
     renderListenModifyVerify( text );
     renderListenDefaultSelection( text );
@@ -130,6 +139,11 @@ public final class TextLCA extends WidgetLCA<Text> {
     if( hasChanged( text, PROP_ORNAMENTS, newValue, null ) ) {
       getRemoteObject( text ).set( PROP_ORNAMENTS, newValue == null ? JsonValue.NULL : newValue );
     }
+  }
+
+  private static String getMessageAlignment( Text text ) {
+    int alignment = text.getMessageAlignment();
+    return alignment == SWT.RIGHT ? "right" : alignment == SWT.CENTER ? "center" : "left";
   }
 
   private static String[] getAllowedStyles( Text text ) {

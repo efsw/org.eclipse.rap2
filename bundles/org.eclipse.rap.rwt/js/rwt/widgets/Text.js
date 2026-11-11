@@ -26,6 +26,10 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       this.__oninput = rwt.util.Functions.bind( this._oninputDomTextarea, this );
     }
     this._message = null;
+    this._rawMessage = null;
+    this._messageMarkup = false;
+    this._messageAlignment = "left";
+    this._messageHideOnFocus = true;
     this._messageElement = null;
     this._searchIconElement = null;
     this._cancelIconElement = null;
@@ -58,7 +62,51 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     // API
 
     setMessage : function( value ) {
-      this._message = value ? rwt.util.Encoding.escapeText( value, false ) : null;
+      this._rawMessage = value ? value : null;
+      this._renderMessageText();
+    },
+
+    /**
+     * Il messaggio e' markup e non testo semplice: si scrive cosi' com'e', senza l'escape. Lo dice
+     * il server, che il markup lo ha costruito e ne ha gia' protetto i testi.
+     */
+    setMessageMarkup : function( value ) {
+      this._messageMarkup = value === true;
+      this._renderMessageText();
+    },
+
+    /**
+     * Dove sta il messaggio nel campo vuoto: "left", "center" o "right". Non segue l'allineamento
+     * del testo.
+     */
+    setMessageAlignment : function( value ) {
+      this._messageAlignment = value ? value : "left";
+      if( this._messageElement ) {
+        this._messageElement.style.textAlign = this._messageAlignment;
+      }
+    },
+
+    /**
+     * Quando il messaggio se ne va: al fuoco (il comportamento di sempre) oppure solo al primo
+     * carattere scritto, come un placeholder del web.
+     */
+    setMessageHideOnFocus : function( value ) {
+      this._messageHideOnFocus = value !== false;
+      this._updateMessageVisibility();
+    },
+
+    /*
+     * Il testo del messaggio come va scritto nell'elemento. Si rifa' sia quando cambia il messaggio
+     * sia quando cambia il modo di leggerlo: le due proprieta' arrivano in un ordine qualunque.
+     */
+    _renderMessageText : function() {
+      if( this._rawMessage == null ) {
+        this._message = null;
+      } else if( this._messageMarkup ) {
+        this._message = this._rawMessage;
+      } else {
+        this._message = rwt.util.Encoding.escapeText( this._rawMessage, false );
+      }
       this._updateMessage();
     },
 
@@ -726,6 +774,7 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
           style.whiteSpace = "nowrap";
           var styleMap = this._getMessageStyle();
           style.color = styleMap.textColor || "";
+          style.textAlign = this._messageAlignment;
           rwt.html.Style.setTextShadow( this._messageElement, styleMap.textShadow );
           this._getTargetNode().insertBefore( this._messageElement, this._inputElement );
         }
@@ -787,7 +836,8 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
 
     _updateMessageVisibility : function() {
       if( this._messageElement ) {
-        var visible = ( this.getValue() == null || this.getValue() === "" ) && !this.getFocused();
+        var empty = this.getValue() == null || this.getValue() === "";
+        var visible = empty && ( !this._messageHideOnFocus || !this.getFocused() );
         this._messageElement.style.display = visible ? "" : "none";
       }
     },
