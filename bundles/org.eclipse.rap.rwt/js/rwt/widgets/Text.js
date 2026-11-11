@@ -301,6 +301,12 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
     // overrided
     _syncFieldWidth : function() {
       if( this._inputElement ) {
+        // la larghezza e' cambiata: prima si decide quali ornamenti ci stanno, poi si fanno i conti
+        if( this._fitOrnaments() ) {
+          this._layoutOrnaments();
+          this._syncFieldLeft();
+          this._layoutMessageX();
+        }
         var width =   this.getInnerWidth()
                     - this._getIconOuterWidth( "search" )
                     - this._getIconOuterWidth( "cancel" )
@@ -371,12 +377,63 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       var result = 0;
       if( this._hasOrnaments() ) {
         for( var i = 0; i < this._ornaments.length; i++ ) {
-          if( this._ornaments[ i ].position === position ) {
+          if( this._ornaments[ i ].position === position && !this._ornaments[ i ].hidden ) {
             result += this._ornaments[ i ].width + this._ORNAMENT_SPACING;
           }
         }
       }
       return result;
+    },
+
+    /* lo spazio che resta sempre a quello che si scrive: sotto questa misura spariscono gli ornamenti */
+    _ORNAMENT_MIN_TEXT_WIDTH : 32,
+
+    /*
+     * In un campo stretto gli ornamenti non si accavallano e non escono dal bordo: spariscono, uno
+     * alla volta, finche' a quello che si scrive resta il suo minimo. Se ne vanno per primi quelli
+     * piu' vicini al testo - gli ultimi della lista - cominciando da destra; l'ultimo a sparire e' il
+     * primo di sinistra, che e' il posto del decorator.
+     *
+     * Ritorna vero se e' cambiato qualcosa, cioe' se le posizioni vanno ricalcolate.
+     */
+    _fitOrnaments : function() {
+      if( !this._hasOrnaments() || this._ornamentElements == null ) {
+        return false;
+      }
+      var available =   this.getInnerWidth()
+                      - this._getIconOuterWidth( "search" )
+                      - this._getIconOuterWidth( "cancel" )
+                      - this._ORNAMENT_MIN_TEXT_WIDTH;
+      var total = 0;
+      var order = [];
+      var i;
+      for( i = this._ornaments.length - 1; i >= 0; i-- ) {
+        total += this._ornaments[ i ].width + this._ORNAMENT_SPACING;
+        if( this._ornaments[ i ].position === "right" ) {
+          order.push( this._ornaments[ i ] );
+        }
+      }
+      for( i = this._ornaments.length - 1; i >= 0; i-- ) {
+        if( this._ornaments[ i ].position !== "right" ) {
+          order.push( this._ornaments[ i ] );
+        }
+      }
+      var changed = false;
+      for( i = 0; i < order.length; i++ ) {
+        var hidden = total > available;
+        if( hidden ) {
+          total -= order[ i ].width + this._ORNAMENT_SPACING;
+        }
+        if( ( order[ i ].hidden === true ) !== hidden ) {
+          order[ i ].hidden = hidden;
+          changed = true;
+        }
+      }
+      for( i = 0; i < this._ornamentElements.length; i++ ) {
+        var element = this._ornamentElements[ i ];
+        element.style.display = element.rwtOrnament.hidden ? "none" : "flex";
+      }
+      return changed;
     },
 
     _updateOrnaments : function() {
@@ -397,6 +454,7 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
           this._ornamentElements.push( element );
         }
       }
+      this._fitOrnaments();
       this._layoutOrnaments();
     },
 
@@ -486,6 +544,9 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       for( var i = 0; i < this._ornamentElements.length; i++ ) {
         var element = this._ornamentElements[ i ];
         var ornament = element.rwtOrnament;
+        if( ornament.hidden ) {
+          continue;
+        }
         if( ornament.position === "right" ) {
           element.style.left = "";
           element.style.right = right + "px";
