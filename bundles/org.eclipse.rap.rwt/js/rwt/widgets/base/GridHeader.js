@@ -182,7 +182,14 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
        * disegna anche lei l'appearance, come bordo destro dell'etichetta, quindi si spegne allo
        * stesso modo - con uno stato.
        */
-      label.toggleState( "noSeparator", !parts.separator );
+      /*
+       * Una riga che non e' quella del tema - piu' corta dell'intestazione, o di un colore suo -
+       * non puo' essere quel bordo: un bordo e' alto quanto il suo elemento. La si disegna su un
+       * elemento nostro, e il bordo dell'appearance si spegne con lo stesso stato.
+       */
+      var line = parts.separator && !parts.boxed ? parts.line : null;
+      label.toggleState( "noSeparator", !parts.separator || line != null );
+      this._renderHeaderSeparator( label, line );
     },
 
     /*
@@ -209,9 +216,31 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
        */
       var separator = result[ "data-header-separator" ] !== "false";
       delete result[ "data-header-separator" ];
+      /*
+       * L'altezza del separatore, in percento dell'intestazione, e il suo colore: anche questi
+       * non arrivano nel DOM. Senza nessuno dei due la riga resta quella del tema, a tutta
+       * altezza, e la disegna l'appearance come prima.
+       */
+      var lineHeight = parseFloat( result[ "data-header-separator-height" ] );
+      var lineColor = result[ "data-header-separator-color" ] || null;
+      delete result[ "data-header-separator-height" ];
+      delete result[ "data-header-separator-color" ];
+      if( isNaN( lineHeight ) ) {
+        lineHeight = 100;
+      }
+      lineHeight = Math.max( 0, Math.min( 100, lineHeight ) );
+      var line = lineHeight < 100 || lineColor != null
+               ? { height : lineHeight, color : lineColor }
+               : null;
       var style = result[ "style" ];
       if( !style ) {
-        return { attributes : result, shape : null, boxed : false, separator : separator };
+        return {
+          attributes : result,
+          shape : null,
+          boxed : false,
+          separator : separator,
+          line : line
+        };
       }
       var probe = document.createElement( "div" );
       probe.style.cssText = style;
@@ -248,7 +277,8 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
         attributes : result,
         shape : shape === "" ? null : shape,
         boxed : boxed,
-        separator : separator
+        separator : separator,
+        line : line
       };
     },
 
@@ -290,6 +320,46 @@ rwt.qx.Class.define( "rwt.widgets.base.GridHeader", {
       }
       node.style.cssText =   "position:absolute;left:0;top:0;right:0;bottom:0;"
                            + "pointer-events:none;z-index:-1;" + shape;
+    },
+
+    /*
+     * Il separatore verticale di un'intestazione quando non e' quello del tema: una riga larga un
+     * pixel sul bordo dell'etichetta, centrata in altezza e alta la percentuale chiesta.
+     *
+     * Sta su un elemento nostro per la stessa ragione della forma: e' l'unico posto dove il
+     * client non riscrive. Il colore, se la griglia non ne dice uno, e' quello che il tema da'
+     * alle righe fra le intestazioni - lo stesso che userebbe il bordo.
+     */
+    _renderHeaderSeparator : function( label, line ) {
+      var node = label.$headerSeparator;
+      if( !line ) {
+        if( node ) {
+          node.style.cssText = "display:none";
+        }
+        return;
+      }
+      if( !node ) {
+        node = document.createElement( "div" );
+        label.$headerSeparator = node;
+        label.$el.append( node );
+      }
+      var color = line.color != null ? line.color : this._getHeaderSeparatorColor();
+      var side = label.hasState( "rwt_RIGHT_TO_LEFT" ) ? "left" : "right";
+      node.style.cssText =   "position:absolute;" + side + ":0;width:1px;pointer-events:none;"
+                           + "top:" + ( ( 100 - line.height ) / 2 ) + "%;"
+                           + "height:" + line.height + "%;"
+                           + "background-color:" + color + ";";
+    },
+
+    _getHeaderSeparatorColor : function() {
+      var states = { "vertical" : true, "header" : true };
+      if( this._config.variant ) {
+        states[ this._config.variant ] = true;
+      }
+      var element =   this._baseAppearance.charAt( 0 ).toUpperCase()
+                    + this._baseAppearance.slice( 1 ) + "-GridLine";
+      var color = new rwt.theme.ThemeValues( states ).getCssColor( element, "color" );
+      return color == "undefined" ? "transparent" : color;
     },
 
     _renderLabelY : function( label, column ) {
