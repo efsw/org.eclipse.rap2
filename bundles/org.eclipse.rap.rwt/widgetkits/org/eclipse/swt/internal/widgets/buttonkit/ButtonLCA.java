@@ -173,7 +173,9 @@ public final class ButtonLCA extends WidgetLCA<Button> {
   private static void renderText( Button button ) {
     String newValue = button.getText();
     if( hasChanged( button, PROP_TEXT, newValue, "" ) ) {
-      String text = removeAmpersandControlCharacters( newValue );
+      // col markup le & sono gia' entita' html, validate da setText: toglierle come caratteri di controllo
+      // degli acceleratori rovinerebbe il testo (&amp; diventerebbe amp;). Lo stesso fa il tooltip col markup
+      String text = isMarkupEnabledFor( button ) ? newValue : removeAmpersandControlCharacters( newValue );
       getRemoteObject( button ).set( PROP_TEXT, text );
     }
   }
@@ -191,7 +193,7 @@ public final class ButtonLCA extends WidgetLCA<Button> {
 
   private static void renderMnemonicIndex( Button button ) {
     String text = button.getText();
-    if( hasChanged( button, PROP_TEXT, text, "" ) ) {
+    if( !isMarkupEnabledFor( button ) && hasChanged( button, PROP_TEXT, text, "" ) ) {
       int mnemonicIndex = findMnemonicCharacterIndex( text );
       if( mnemonicIndex != -1 ) {
         getRemoteObject( button ).set( PROP_MNEMONIC_INDEX, mnemonicIndex );
