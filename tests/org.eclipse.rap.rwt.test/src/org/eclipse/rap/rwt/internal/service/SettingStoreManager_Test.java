@@ -21,6 +21,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jakarta.servlet.http.Cookie;
@@ -105,13 +107,13 @@ public class SettingStoreManager_Test {
     TestResponse response = ( TestResponse )ContextProvider.getResponse();
     Cookie cookie = response.getCookie( "settingStore" );
     assertTrue( cookie.getMaxAge() > 0 );
-    assertTrue( Pattern.matches( "[0-9]*_[0-9]*", cookie.getValue() ) );
+    assertTrue( Pattern.matches( "[0-9a-f]{32}", cookie.getValue() ) );
     assertTrue( cookie.isHttpOnly() );
   }
 
   @Test
   public void testGetStoreReadsCookie() {
-    String storeId = "123_456";
+    String storeId = "0123456789abcdef0123456789abcdef";
     Cookie cookie = new Cookie( "settingStore", storeId );
     cookie.setMaxAge( 3600 );
     ( ( TestRequest )ContextProvider.getRequest() ).addCookie( cookie );
@@ -125,11 +127,28 @@ public class SettingStoreManager_Test {
     assertFalse( SettingStoreManager.isValidCookieValue( "" ) );
     assertFalse( SettingStoreManager.isValidCookieValue( "_" ) );
     assertFalse( SettingStoreManager.isValidCookieValue( "ABC_DEF" ) );
-    assertTrue( SettingStoreManager.isValidCookieValue( "123_456" ) );
+    assertTrue( SettingStoreManager.isValidCookieValue( "0123456789abcdef0123456789abcdef" ) );
+    // the old predictable format is no longer accepted
+    assertFalse( SettingStoreManager.isValidCookieValue( "123_456" ) );
     String maxLong = String.valueOf( Long.MAX_VALUE );
     String maxInt = String.valueOf( Integer.MAX_VALUE );
-    String value = maxLong + "_" + maxInt;
-    assertTrue( SettingStoreManager.isValidCookieValue( value ) );
+    assertFalse( SettingStoreManager.isValidCookieValue( maxLong + "_" + maxInt ) );
+    // upper case would alias a lower case id on a case-insensitive file system
+    assertFalse( SettingStoreManager.isValidCookieValue( "0123456789ABCDEF0123456789ABCDEF" ) );
+    // length and path characters
+    assertFalse( SettingStoreManager.isValidCookieValue( "0123456789abcdef0123456789abcde" ) );
+    assertFalse( SettingStoreManager.isValidCookieValue( "0123456789abcdef0123456789abcdef0" ) );
+    assertFalse( SettingStoreManager.isValidCookieValue( "../3456789abcdef0123456789abcdef" ) );
+  }
+
+  @Test
+  public void testCreateUniqueStoreId() {
+    Set<String> ids = new HashSet<>();
+    for( int i = 0; i < 1000; i++ ) {
+      String id = SettingStoreManager.createUniqueStoreId();
+      assertTrue( SettingStoreManager.isValidCookieValue( id ) );
+      assertTrue( ids.add( id ) );
+    }
   }
 
   @Test

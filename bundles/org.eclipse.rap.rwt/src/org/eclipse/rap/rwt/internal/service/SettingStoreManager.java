@@ -12,6 +12,8 @@
  ******************************************************************************/
 package org.eclipse.rap.rwt.internal.service;
 
+import java.security.SecureRandom;
+
 import jakarta.servlet.http.Cookie;
 
 import org.eclipse.rap.rwt.internal.util.ParamCheck;
@@ -23,8 +25,12 @@ import org.eclipse.rap.rwt.service.SettingStoreFactory;
 public class SettingStoreManager {
   private static final String COOKIE_NAME = "settingStore";
   private static final int COOKIE_MAX_AGE_SEC = 3600 * 24 * 90; // 3 months
-  private static long last = System.currentTimeMillis();
-  private static int instanceCount;
+  // The store id is the only thing that grants access to a store: whoever presents it in the
+  // cookie gets the store. It must therefore be unguessable, not merely unique: 128 random bits.
+  private static final int STORE_ID_BYTES = 16;
+  private static final int STORE_ID_LENGTH = STORE_ID_BYTES * 2;
+  private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
+  private static final SecureRandom RANDOM = new SecureRandom();
 
   private SettingStoreFactory factory;
 
@@ -102,29 +108,35 @@ public class SettingStoreManager {
     return result;
   }
 
-  private synchronized static String createUniqueStoreId() {
-    long now = System.currentTimeMillis();
-    if( last == now ) {
-      instanceCount++;
-    } else {
-      last = now;
-      instanceCount = 0;
+  // The id used to be the creation time in milliseconds plus a counter: anyone who could guess
+  // when a browser first opened the application could load that browser's store.
+  // Lower case hex only: the id becomes a file name, and on a case-insensitive file system two ids
+  // that differ only in case would share the same file.
+  static String createUniqueStoreId() {
+    byte[] bytes = new byte[ STORE_ID_BYTES ];
+    RANDOM.nextBytes( bytes );
+    char[] chars = new char[ STORE_ID_LENGTH ];
+    for( int i = 0; i < bytes.length; i++ ) {
+      chars[ i * 2 ] = HEX_DIGITS[ ( bytes[ i ] >> 4 ) & 0x0f ];
+      chars[ i * 2 + 1 ] = HEX_DIGITS[ bytes[ i ] & 0x0f ];
     }
-    return String.valueOf( now ) + "_" + String.valueOf( instanceCount );
+    return new String( chars );
   }
 
+  // Only ids in the format created above are accepted. Ids in the old predictable format
+  // ("<millis>_<counter>") are rejected on purpose: the browser gets a new random id and starts
+  // with an empty store.
   static boolean isValidCookieValue( String value ) {
-    int index = value.indexOf( '_' );
-    if( index != -1 ) {
-      try {
-        Long.parseLong( value.substring( 0, index ) );
-        Integer.parseInt( value.substring( index + 1 ) );
-        return true;
-      } catch( @SuppressWarnings( "unused" ) NumberFormatException nfe ) {
-        // Cookie format is invalid
+    if( value == null || value.length() != STORE_ID_LENGTH ) {
+      return false;
+    }
+    for( int i = 0; i < value.length(); i++ ) {
+      char ch = value.charAt( i );
+      if( !( ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f' ) ) {
+        return false;
       }
     }
-    return false;
+    return true;
   }
 
 }
