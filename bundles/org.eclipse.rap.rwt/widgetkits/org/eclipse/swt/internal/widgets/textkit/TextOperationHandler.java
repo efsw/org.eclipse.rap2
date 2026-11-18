@@ -166,8 +166,13 @@ public class TextOperationHandler extends ControlOperationHandler<Text> {
     final String id = value.asString();
     for( final TextOrnament ornament : text.getOrnaments() ) {
       if( ornament.getId().equals( id ) && ornament.getListener() != null ) {
-        // nella fase delle azioni, come ogni altro evento: chi ascolta puo' aprire finestre
-        ProcessActionRunner.add( new Runnable() {
+        // nella fase delle azioni, ma DOPO gli eventi arrivati nella stessa richiesta: la coda di
+        // ProcessActionRunner passa davanti a EventList (Display.runPendingMessages), e il clic
+        // sull'ornamento finirebbe prima del FocusOut/FocusIn che il client ha mandato prima di lui.
+        // Chi ascolta puo' aprire una finestra e darle il fuoco, e quegli eventi arrivati dopo
+        // riporterebbero il fuoco, per il server, sul campo da cui si e' partiti. Le async girano
+        // dopo gli eventi, come un Selection normale.
+        text.getDisplay().asyncExec( new Runnable() {
           @Override
           public void run() {
             if( !text.isDisposed() && text.isEnabled() ) {

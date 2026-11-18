@@ -280,18 +280,37 @@ rwt.qx.Class.define( "rwt.widgets.Text", {
       if( !this.getEnabled() || rwt.remote.EventUtil.getSuspended() ) {
         return;
       }
+      var element = this._getSelectableOrnamentElement( target );
+      if( element != null ) {
+        var connection = rwt.remote.Connection.getInstance();
+        var id = rwt.remote.ObjectRegistry.getId( this );
+        connection.getMessageWriter().appendNotify( id, "OrnamentSelection", {
+          "id" : element.rwtOrnament.id
+        } );
+        connection.send();
+      }
+    },
+
+    /*
+     * Un ornamento selezionabile e' un'azione del campo, come quelle che stavano nella toolbar
+     * accanto: il clic non gli da il fuoco (chiamata da EventHandler sul mousedown). Un ornamento
+     * che non e' un'azione (il decorator) resta parte del campo, e il clic lo mette a fuoco.
+     */
+    isFocusKeepingTarget : function( target ) {
+      return this.getEnabled() && this._getSelectableOrnamentElement( target ) != null;
+    },
+
+    _getSelectableOrnamentElement : function( target ) {
+      if( target == null || this._ornamentElements == null ) {
+        return null;
+      }
       for( var i = 0; i < this._ornamentElements.length; i++ ) {
         var element = this._ornamentElements[ i ];
         if( element.contains( target ) && element.rwtOrnament.selectable ) {
-          var connection = rwt.remote.Connection.getInstance();
-          var id = rwt.remote.ObjectRegistry.getId( this );
-          connection.getMessageWriter().appendNotify( id, "OrnamentSelection", {
-            "id" : element.rwtOrnament.id
-          } );
-          connection.send();
-          return;
+          return element;
         }
       }
+      return null;
     },
 
     ///////////////

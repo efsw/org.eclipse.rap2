@@ -317,7 +317,18 @@ rwt.event.EventHandler = {
       }
     }
     if( vType == "mousedown" ) {
-      EventHandlerUtil.handleFocusedChild( vDispatchTarget );
+      if(    !vCaptureTarget
+          && typeof vDispatchTarget.isFocusKeepingTarget === "function"
+          && vDispatchTarget.isFocusKeepingTarget( vDomTarget ) )
+      {
+        // Come un item di una toolbar senza fuoco: il clic su un'azione dentro il widget (un
+        // ornamento di un Text) lascia il fuoco DOV'E'. Niente cambio di focusedChild, e niente
+        // comportamento di default del browser, che sul mousedown di un elemento non focusable
+        // toglierebbe il fuoco al campo su cui si stava scrivendo.
+        vDomEvent.preventDefault();
+      } else {
+        EventHandlerUtil.handleFocusedChild( vDispatchTarget );
+      }
     }
     // handle related target object
     if( vType == "mouseover" || vType == "mouseout" ) {
